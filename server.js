@@ -57,6 +57,20 @@ const initialData = {
     }
   ],
   playSessions: [],
+  punchTasks: [
+    {
+      id: "task_demo_1",
+      tuneId: "tune_demo",
+      sectionId: "section_demo_2",
+      priority: "high",
+      assignee: null,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      claimedAt: null,
+      completedAt: null,
+      note: "副歌段待打孔校对"
+    }
+  ],
   stripSpecTemplates: [
     {
       id: "tpl_20_standard",
@@ -143,7 +157,12 @@ const routes = [
   "GET /play-sessions/:id",
   "PATCH /play-sessions/:id/end",
   "GET /strip-spec-templates",
-  "POST /strip-spec-templates"
+  "POST /strip-spec-templates",
+  "GET /punch-tasks",
+  "POST /punch-tasks/generate",
+  "POST /punch-tasks",
+  "PATCH /punch-tasks/:id/claim",
+  "PATCH /punch-tasks/:id/complete"
 ];
 
 async function ensureDb() {
@@ -157,6 +176,10 @@ async function ensureDb() {
     }
     if (!data.playSessions) {
       data.playSessions = [];
+      needWrite = true;
+    }
+    if (!data.punchTasks) {
+      data.punchTasks = [];
       needWrite = true;
     }
     for (const tune of data.tunes || []) {
@@ -237,6 +260,44 @@ function findTemplate(db, templateId) {
     throw error;
   }
   return template;
+}
+
+function findSection(db, sectionId) {
+  const section = db.sections.find((item) => item.id === sectionId);
+  if (!section) {
+    const error = new Error("区间不存在");
+    error.status = 404;
+    throw error;
+  }
+  return section;
+}
+
+function findPunchTask(db, taskId) {
+  const task = db.punchTasks.find((item) => item.id === taskId);
+  if (!task) {
+    const error = new Error("打孔任务不存在");
+    error.status = 404;
+    throw error;
+  }
+  return task;
+}
+
+function validatePriority(priority) {
+  const valid = ["low", "medium", "high", "urgent"];
+  if (!valid.includes(priority)) {
+    const error = new Error(`优先级必须是：${valid.join("、")}`);
+    error.status = 400;
+    throw error;
+  }
+}
+
+function validateTaskStatus(status) {
+  const valid = ["pending", "claimed", "completed"];
+  if (!valid.includes(status)) {
+    const error = new Error(`任务状态必须是：${valid.join("、")}`);
+    error.status = 400;
+    throw error;
+  }
 }
 
 function validateStripSpec(spec) {
@@ -508,6 +569,187 @@ async function handle(req, res) {
     db.stripSpecTemplates.push(template);
     await writeDb(db);
     return send(res, 201, { data: template });
+  }
+
+  if (req.method === "GET" && pathname === "/punch-tasks") {
+    const tuneId = searchParams.get("tuneId");
+    const status = searchParams.get("status");
+    const priority = searchParams.get("priority");
+    const assignee = searchParams.get("assignee");
+    const onlyUnassigned = searchParams.get("onlyUnassigned") === "true";
+
+    if (status) validateTaskStatus(status);
+    if (priority) validatePriority(priority);
+
+    let tasks = db.punchTasks.filter((item) => {
+      if (tuneId && item.tuneId !== tuneId) return false;
+      if (status && item.status !== status) return false;
+      if (priority && item.priority !== priority) return false;
+      if (assignee && item.assignee !== assignee) return false;
+      if (onlyUnassigned && item.assignee) return false;
+      return true;
+    });
+
+    tasks = tasks.sort((a, b) => {
+      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+      const pDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+      if (pDiff !== 0) return pDiff;
+      return a.createdAt < b.createdAt ? -1 : 1;
+    });
+
+    const enriched = tasks.map((task) => {
+      const tune = db.tunes.find((t) => t.id === task.tuneId);
+      const section = db.sections.find((s) => s.id === task.sectionId);
+      return {
+        ...task,
+        tuneTitle: tune ? tune.title : null,
+        section: section
+          ? {
+              startBeat: section.startBeat,
+              endBeat: section.endBeat,
+              laneRange: section.laneRange,
+              checked: section.checked,
+              note: section.note
+            }
+          : null
+      };
+    });
+
+    return send(res, 200, { data: enriched });
+  }
+
+  if (req.method === "POST" && pathname === "/punch-tasks/generate") {
+    const body = await parseBody(req);
+    const tuneId = body.tuneId;
+    const defaultPriority = body.defaultPriority || "medium";
+    validatePriority(defaultPriority);
+
+    if (tuneId) {
+      findTune(db, tuneId);
+    }
+
+    const uncheckedSections = db.sections.filter(
+      (s) => (!tuneId || s.tuneId === tuneId) && !s.checked
+    );
+
+    if (uncheckedSections.length === 0) {
+      return send(res, 200, { data: [], message: "没有未检查的区间需要生成任务" });
+    }
+
+    const createdTasks = [];
+    for (const section of uncheckedSections) {
+      const existingTask = db.punchTasks.find(
+        (t) => t.sectionId === section.id && t.status !== "completed"
+      );
+      if (existingTask) continue;
+
+      const task = {
+        id: makeId("task"),
+        tuneId: section.tuneId,
+        sectionId: section.id,
+        priority: defaultPriority,
+        assignee: null,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        claimedAt: null,
+        completedAt: null,
+        note: section.note || `区间 ${section.startBeat}-${section.endBeat} 待打孔`
+      };
+      db.punchTasks.push(task);
+      createdTasks.push(task);
+    }
+
+    await writeDb(db);
+    return send(res, 201, {
+      data: createdTasks,
+      totalCreated: createdTasks.length,
+      totalSkipped: uncheckedSections.length - createdTasks.length
+    });
+  }
+
+  if (req.method === "POST" && pathname === "/punch-tasks") {
+    const body = await parseBody(req);
+    required(body, ["tuneId", "sectionId"]);
+    findTune(db, body.tuneId);
+    const section = findSection(db, body.sectionId);
+    if (section.tuneId !== body.tuneId) {
+      return send(res, 400, { error: "区间不属于该曲目" });
+    }
+
+    const priority = body.priority || "medium";
+    validatePriority(priority);
+
+    const existingTask = db.punchTasks.find(
+      (t) => t.sectionId === body.sectionId && t.status !== "completed"
+    );
+    if (existingTask) {
+      return send(res, 409, { error: "该区间已有进行中的打孔任务", data: existingTask });
+    }
+
+    const task = {
+      id: makeId("task"),
+      tuneId: body.tuneId,
+      sectionId: body.sectionId,
+      priority,
+      assignee: null,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      claimedAt: null,
+      completedAt: null,
+      note: body.note || ""
+    };
+    db.punchTasks.push(task);
+    await writeDb(db);
+    return send(res, 201, { data: task });
+  }
+
+  const claimTaskMatch = pathname.match(/^\/punch-tasks\/([^/]+)\/claim$/);
+  if (claimTaskMatch && req.method === "PATCH") {
+    const task = findPunchTask(db, claimTaskMatch[1]);
+    if (task.status !== "pending") {
+      return send(res, 400, { error: `当前任务状态为 ${task.status}，无法领取` });
+    }
+    const body = await parseBody(req);
+    required(body, ["assignee"]);
+
+    task.assignee = body.assignee;
+    task.status = "claimed";
+    task.claimedAt = new Date().toISOString();
+    task.note = body.note ?? task.note;
+    await writeDb(db);
+    return send(res, 200, { data: task });
+  }
+
+  const completeTaskMatch = pathname.match(/^\/punch-tasks\/([^/]+)\/complete$/);
+  if (completeTaskMatch && req.method === "PATCH") {
+    const task = findPunchTask(db, completeTaskMatch[1]);
+    if (task.status === "completed") {
+      return send(res, 400, { error: "任务已完成" });
+    }
+    if (task.status === "pending") {
+      return send(res, 400, { error: "任务尚未领取，请先领取任务" });
+    }
+    const body = await parseBody(req);
+
+    task.status = "completed";
+    task.completedAt = new Date().toISOString();
+    task.note = body.note ?? task.note;
+
+    if (body.checkSection === true) {
+      const section = db.sections.find((s) => s.id === task.sectionId);
+      if (section) {
+        section.checked = true;
+        if (body.sectionNote !== undefined) {
+          section.note = body.sectionNote;
+        }
+      }
+    }
+
+    await writeDb(db);
+    return send(res, 200, {
+      data: task,
+      sectionChecked: body.checkSection === true
+    });
   }
 
   return send(res, 404, { error: "接口不存在", routes });

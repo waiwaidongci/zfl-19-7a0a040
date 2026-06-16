@@ -13,6 +13,34 @@
       "templateId": null,
       "templateNameSnapshot": null,
       "createdAt": "2026-06-16T00:00:00.000Z"
+    },
+    {
+      "id": "tune_mqgu551k_tywlma",
+      "title": "夏夜小夜曲",
+      "composer": "",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 82,
+        "paperType": "半透明纸带"
+      },
+      "templateId": "tpl_20_semitrans",
+      "templateNameSnapshot": "20音半透明纸带",
+      "createdAt": "2026-06-16T16:07:17.960Z"
+    },
+    {
+      "id": "tune_mqgubbw3_uqccod",
+      "title": "测试曲目",
+      "composer": "",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 82,
+        "paperType": "半透明纸带"
+      },
+      "templateId": "tpl_20_semitrans",
+      "templateNameSnapshot": "20音半透明纸带",
+      "createdAt": "2026-06-16T16:12:06.771Z"
     }
   ],
   "sections": [
@@ -33,6 +61,60 @@
       "laneRange": "4-18",
       "checked": false,
       "note": "副歌段等待校对"
+    },
+    {
+      "id": "section_mqgu555e_tdf3ff",
+      "tuneId": "tune_mqgu551k_tywlma",
+      "startBeat": 1,
+      "endBeat": 32,
+      "laneRange": "1-10",
+      "checked": true,
+      "note": "序奏段已校对"
+    },
+    {
+      "id": "section_mqgu558o_ww7okz",
+      "tuneId": "tune_mqgu551k_tywlma",
+      "startBeat": 33,
+      "endBeat": 64,
+      "laneRange": "4-18",
+      "checked": false,
+      "note": "主歌段待打孔"
+    },
+    {
+      "id": "section_mqgu55dj_oat31r",
+      "tuneId": "tune_mqgu551k_tywlma",
+      "startBeat": 65,
+      "endBeat": 96,
+      "laneRange": "2-16",
+      "checked": false,
+      "note": "副歌段紧急"
+    },
+    {
+      "id": "section_mqgubbwc_xt4xki",
+      "tuneId": "tune_mqgubbw3_uqccod",
+      "startBeat": 1,
+      "endBeat": 32,
+      "laneRange": "1-10",
+      "checked": true,
+      "note": "序奏段已校对"
+    },
+    {
+      "id": "section_mqgubbwk_fykzyf",
+      "tuneId": "tune_mqgubbw3_uqccod",
+      "startBeat": 33,
+      "endBeat": 64,
+      "laneRange": "1-10",
+      "checked": true,
+      "note": "打孔完成，校验无误"
+    },
+    {
+      "id": "section_mqgubbwt_g054cn",
+      "tuneId": "tune_mqgubbw3_uqccod",
+      "startBeat": 65,
+      "endBeat": 96,
+      "laneRange": "1-10",
+      "checked": false,
+      "note": "副歌段紧急"
     }
   ],
   "issues": [
@@ -50,6 +132,68 @@
     }
   ],
   "playSessions": [],
+  "punchTasks": [
+    {
+      "id": "task_demo_1",
+      "tuneId": "tune_demo",
+      "sectionId": "section_demo_2",
+      "priority": "high",
+      "assignee": null,
+      "status": "pending",
+      "createdAt": "2026-06-16T00:00:00.000Z",
+      "claimedAt": null,
+      "completedAt": null,
+      "note": "副歌段待打孔校对"
+    },
+    {
+      "id": "task_mqgu55g8_b70iwm",
+      "tuneId": "tune_mqgu551k_tywlma",
+      "sectionId": "section_mqgu558o_ww7okz",
+      "priority": "high",
+      "assignee": "张三",
+      "status": "claimed",
+      "createdAt": "2026-06-16T16:07:18.488Z",
+      "claimedAt": "2026-06-16T16:07:18.909Z",
+      "completedAt": null,
+      "note": "今天下午完成"
+    },
+    {
+      "id": "task_mqgu55g8_2a0qa4",
+      "tuneId": "tune_mqgu551k_tywlma",
+      "sectionId": "section_mqgu55dj_oat31r",
+      "priority": "high",
+      "assignee": null,
+      "status": "pending",
+      "createdAt": "2026-06-16T16:07:18.488Z",
+      "claimedAt": null,
+      "completedAt": null,
+      "note": "副歌段紧急"
+    },
+    {
+      "id": "task_mqgubbx1_ifzzou",
+      "tuneId": "tune_mqgubbw3_uqccod",
+      "sectionId": "section_mqgubbwk_fykzyf",
+      "priority": "high",
+      "assignee": "user001",
+      "status": "completed",
+      "createdAt": "2026-06-16T16:12:06.805Z",
+      "claimedAt": "2026-06-16T16:12:06.821Z",
+      "completedAt": "2026-06-16T16:12:06.845Z",
+      "note": "按时完成"
+    },
+    {
+      "id": "task_mqgubbx1_ga0g3b",
+      "tuneId": "tune_mqgubbw3_uqccod",
+      "sectionId": "section_mqgubbwt_g054cn",
+      "priority": "high",
+      "assignee": null,
+      "status": "pending",
+      "createdAt": "2026-06-16T16:12:06.805Z",
+      "claimedAt": null,
+      "completedAt": null,
+      "note": "副歌段紧急"
+    }
+  ],
   "stripSpecTemplates": [
     {
       "id": "tpl_20_standard",
