@@ -12,7 +12,40 @@
       },
       "templateId": null,
       "templateNameSnapshot": null,
-      "createdAt": "2026-06-16T00:00:00.000Z"
+      "currentEditionId": "edition_demo_init",
+      "createdAt": "2026-06-16T16:37:57.763Z"
+    }
+  ],
+  "tapeEditions": [
+    {
+      "id": "edition_demo_init",
+      "tuneId": "tune_demo",
+      "version": 1,
+      "source": "initial",
+      "sourceEditionId": null,
+      "description": "初始版次",
+      "sectionsSnapshot": [
+        {
+          "id": "section_demo_1",
+          "tuneId": "tune_demo",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "开头主题已试奏"
+        },
+        {
+          "id": "section_demo_2",
+          "tuneId": "tune_demo",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "副歌段等待校对"
+        }
+      ],
+      "isCurrent": true,
+      "createdAt": "2026-06-16T16:37:57.764Z"
     }
   ],
   "sections": [
@@ -45,8 +78,9 @@
       "lane": 12,
       "description": "第41拍高音孔漏打",
       "status": "open",
-      "createdAt": "2026-06-16T00:00:00.000Z",
-      "resolvedAt": null
+      "createdAt": "2026-06-16T16:37:57.764Z",
+      "resolvedAt": null,
+      "editionId": null
     }
   ],
   "playSessions": [],
@@ -58,7 +92,7 @@
       "priority": "high",
       "assignee": null,
       "status": "pending",
-      "createdAt": "2026-06-16T00:00:00.000Z",
+      "createdAt": "2026-06-16T16:37:57.764Z",
       "claimedAt": null,
       "completedAt": null,
       "note": "副歌段待打孔校对"
@@ -75,8 +109,8 @@
         "tempoBpm": 80,
         "paperType": "普通纸带"
       },
-      "createdAt": "2026-06-16T00:00:00.000Z",
-      "updatedAt": "2026-06-16T00:00:00.000Z"
+      "createdAt": "2026-06-16T16:37:57.764Z",
+      "updatedAt": "2026-06-16T16:37:57.764Z"
     },
     {
       "id": "tpl_20_semitrans",
@@ -88,8 +122,8 @@
         "tempoBpm": 82,
         "paperType": "半透明纸带"
       },
-      "createdAt": "2026-06-16T00:00:00.000Z",
-      "updatedAt": "2026-06-16T00:00:00.000Z"
+      "createdAt": "2026-06-16T16:37:57.764Z",
+      "updatedAt": "2026-06-16T16:37:57.764Z"
     },
     {
       "id": "tpl_20_thick",
@@ -101,8 +135,8 @@
         "tempoBpm": 76,
         "paperType": "加厚纸带"
       },
-      "createdAt": "2026-06-16T00:00:00.000Z",
-      "updatedAt": "2026-06-16T00:00:00.000Z"
+      "createdAt": "2026-06-16T16:37:57.764Z",
+      "updatedAt": "2026-06-16T16:37:57.764Z"
     },
     {
       "id": "tpl_20_slow",
@@ -114,8 +148,8 @@
         "tempoBpm": 70,
         "paperType": "普通纸带"
       },
-      "createdAt": "2026-06-16T00:00:00.000Z",
-      "updatedAt": "2026-06-16T00:00:00.000Z"
+      "createdAt": "2026-06-16T16:37:57.764Z",
+      "updatedAt": "2026-06-16T16:37:57.764Z"
     },
     {
       "id": "tpl_20_performance",
@@ -127,8 +161,8 @@
         "tempoBpm": 88,
         "paperType": "半透明纸带"
       },
-      "createdAt": "2026-06-16T00:00:00.000Z",
-      "updatedAt": "2026-06-16T00:00:00.000Z"
+      "createdAt": "2026-06-16T16:37:57.764Z",
+      "updatedAt": "2026-06-16T16:37:57.764Z"
     }
   ]
 }
