@@ -440,12 +440,12 @@ async function handle(req, res) {
     const tuneId = playSessionsListMatch[1];
     findTune(db, tuneId);
     const body = await parseBody(req);
-    required(body, ["player"]);
+    required(body, ["player", "startSectionId"]);
     const session = {
       id: makeId("ps"),
       tuneId,
       player: body.player,
-      startSectionId: body.startSectionId || null,
+      startSectionId: body.startSectionId,
       endSectionId: null,
       issuesFound: 0,
       note: body.note || "",
@@ -475,6 +475,7 @@ async function handle(req, res) {
       return send(res, 400, { error: "试奏会话已结束" });
     }
     const body = await parseBody(req);
+    required(body, ["endSectionId"]);
     session.endSectionId = body.endSectionId ?? session.endSectionId;
     session.issuesFound = body.issuesFound !== undefined ? Number(body.issuesFound) : session.issuesFound;
     session.note = body.note !== undefined ? body.note : session.note;
