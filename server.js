@@ -56,6 +56,7 @@ const initialData = {
       resolvedAt: null
     }
   ],
+  playSessions: [],
   stripSpecTemplates: [
     {
       id: "tpl_20_standard",
@@ -133,10 +134,14 @@ const routes = [
   "GET /tunes/:id/sections",
   "POST /tunes/:id/sections",
   "GET /tunes/:id/unchecked-sections",
+  "GET /tunes/:id/play-sessions",
+  "POST /tunes/:id/play-sessions",
   "PATCH /sections/:id/check",
   "GET /issues",
   "POST /issues",
   "PATCH /issues/:id/status",
+  "GET /play-sessions/:id",
+  "PATCH /play-sessions/:id/end",
   "GET /strip-spec-templates",
   "POST /strip-spec-templates"
 ];
@@ -148,6 +153,10 @@ async function ensureDb() {
     let needWrite = false;
     if (!data.stripSpecTemplates) {
       data.stripSpecTemplates = initialData.stripSpecTemplates;
+      needWrite = true;
+    }
+    if (!data.playSessions) {
+      data.playSessions = [];
       needWrite = true;
     }
     for (const tune of data.tunes || []) {
@@ -249,8 +258,16 @@ function buildProgress(db, tuneId) {
   findTune(db, tuneId);
   const sections = db.sections.filter((item) => item.tuneId === tuneId);
   const issues = db.issues.filter((item) => item.tuneId === tuneId);
+  const sessions = db.playSessions.filter((item) => item.tuneId === tuneId);
   const checkedCount = sections.filter((item) => item.checked).length;
   const openIssues = issues.filter((item) => item.status !== "resolved").length;
+  let lastPlayedAt = null;
+  if (sessions.length) {
+    lastPlayedAt = sessions.reduce((latest, s) => {
+      const t = s.endedAt || s.startedAt;
+      return !latest || t > latest ? t : latest;
+    }, null);
+  }
   return {
     tuneId,
     totalSections: sections.length,
@@ -258,7 +275,8 @@ function buildProgress(db, tuneId) {
     uncheckedSections: sections.length - checkedCount,
     openIssues,
     resolvedIssues: issues.length - openIssues,
-    percent: sections.length ? Math.round((checkedCount / sections.length) * 100) : 0
+    percent: sections.length ? Math.round((checkedCount / sections.length) * 100) : 0,
+    lastPlayedAt
   };
 }
 
@@ -406,6 +424,64 @@ async function handle(req, res) {
     issue.note = body.note ?? issue.note;
     await writeDb(db);
     return send(res, 200, { data: issue });
+  }
+
+  const playSessionsListMatch = pathname.match(/^\/tunes\/([^/]+)\/play-sessions$/);
+  if (playSessionsListMatch && req.method === "GET") {
+    const tuneId = playSessionsListMatch[1];
+    findTune(db, tuneId);
+    const sessions = db.playSessions
+      .filter((item) => item.tuneId === tuneId)
+      .sort((a, b) => (b.startedAt > a.startedAt ? 1 : -1));
+    return send(res, 200, { data: sessions });
+  }
+
+  if (playSessionsListMatch && req.method === "POST") {
+    const tuneId = playSessionsListMatch[1];
+    findTune(db, tuneId);
+    const body = await parseBody(req);
+    required(body, ["player"]);
+    const session = {
+      id: makeId("ps"),
+      tuneId,
+      player: body.player,
+      startSectionId: body.startSectionId || null,
+      endSectionId: null,
+      issuesFound: 0,
+      note: body.note || "",
+      status: "active",
+      startedAt: new Date().toISOString(),
+      endedAt: null
+    };
+    db.playSessions.push(session);
+    await writeDb(db);
+    return send(res, 201, { data: session });
+  }
+
+  const playSessionMatch = pathname.match(/^\/play-sessions\/([^/]+)$/);
+  if (playSessionMatch && req.method === "GET") {
+    const sessionId = playSessionMatch[1];
+    const session = db.playSessions.find((item) => item.id === sessionId);
+    if (!session) return send(res, 404, { error: "试奏会话不存在" });
+    return send(res, 200, { data: session });
+  }
+
+  const endSessionMatch = pathname.match(/^\/play-sessions\/([^/]+)\/end$/);
+  if (endSessionMatch && req.method === "PATCH") {
+    const sessionId = endSessionMatch[1];
+    const session = db.playSessions.find((item) => item.id === sessionId);
+    if (!session) return send(res, 404, { error: "试奏会话不存在" });
+    if (session.status === "ended") {
+      return send(res, 400, { error: "试奏会话已结束" });
+    }
+    const body = await parseBody(req);
+    session.endSectionId = body.endSectionId ?? session.endSectionId;
+    session.issuesFound = body.issuesFound !== undefined ? Number(body.issuesFound) : session.issuesFound;
+    session.note = body.note !== undefined ? body.note : session.note;
+    session.status = "ended";
+    session.endedAt = new Date().toISOString();
+    await writeDb(db);
+    return send(res, 200, { data: session });
   }
 
   if (req.method === "GET" && pathname === "/strip-spec-templates") {
