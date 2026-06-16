@@ -262,7 +262,19 @@ async function ensureDb() {
           };
           data.tapeEditions.push(edition);
           tune.currentEditionId = edition.id;
+          for (const issue of data.issues || []) {
+            if (issue.tuneId === tune.id && !issue.editionId) {
+              issue.editionId = edition.id;
+            }
+          }
           needWrite = true;
+        }
+      } else {
+        for (const issue of data.issues || []) {
+          if (issue.tuneId === tune.id && !issue.editionId) {
+            issue.editionId = tune.currentEditionId;
+            needWrite = true;
+          }
         }
       }
     }
@@ -597,6 +609,18 @@ async function handle(req, res) {
     const section = db.sections.find((item) => item.id === body.sectionId && item.tuneId === body.tuneId);
     if (!section) return send(res, 400, { error: "区间不存在或不属于该曲目" });
     const resolvedEditionId = resolveEditionId(db, body.tuneId, body.editionId || null);
+    if (resolvedEditionId) {
+      const edition = findEdition(db, resolvedEditionId);
+      if (edition.tuneId !== body.tuneId) {
+        return send(res, 400, { error: "版次不属于该曲目" });
+      }
+      const sectionInEdition = edition.sectionsSnapshot.find(
+        (s) => s.id === body.sectionId
+      );
+      if (!sectionInEdition) {
+        return send(res, 400, { error: "区间不存在于指定版次中" });
+      }
+    }
     const issue = {
       id: makeId("issue"),
       tuneId: body.tuneId,
@@ -727,6 +751,7 @@ async function handle(req, res) {
       0
     );
 
+    const setAsCurrent = body.setAsCurrent !== false;
     const edition = {
       id: makeId("edition"),
       tuneId,
@@ -735,9 +760,23 @@ async function handle(req, res) {
       sourceEditionId,
       description: body.description,
       sectionsSnapshot,
-      isCurrent: false,
+      isCurrent: setAsCurrent,
       createdAt: new Date().toISOString()
     };
+
+    if (setAsCurrent) {
+      for (const e of db.tapeEditions) {
+        if (e.tuneId === tuneId) {
+          e.isCurrent = false;
+        }
+      }
+      tune.currentEditionId = edition.id;
+      db.sections = db.sections.filter((s) => s.tuneId !== tuneId);
+      for (const snap of edition.sectionsSnapshot) {
+        const section = { ...snap, tuneId };
+        db.sections.push(section);
+      }
+    }
 
     db.tapeEditions.push(edition);
     await writeDb(db);

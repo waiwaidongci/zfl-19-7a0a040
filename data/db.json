@@ -13,7 +13,7 @@
       "templateId": null,
       "templateNameSnapshot": null,
       "currentEditionId": "edition_demo_init",
-      "createdAt": "2026-06-16T16:37:57.763Z"
+      "createdAt": "2026-06-16T16:50:29.390Z"
     }
   ],
   "tapeEditions": [
@@ -45,7 +45,7 @@
         }
       ],
       "isCurrent": true,
-      "createdAt": "2026-06-16T16:37:57.764Z"
+      "createdAt": "2026-06-16T16:50:29.391Z"
     }
   ],
   "sections": [
@@ -78,9 +78,8 @@
       "lane": 12,
       "description": "第41拍高音孔漏打",
       "status": "open",
-      "createdAt": "2026-06-16T16:37:57.764Z",
-      "resolvedAt": null,
-      "editionId": null
+      "createdAt": "2026-06-16T16:50:29.391Z",
+      "resolvedAt": null
     }
   ],
   "playSessions": [],
@@ -92,7 +91,7 @@
       "priority": "high",
       "assignee": null,
       "status": "pending",
-      "createdAt": "2026-06-16T16:37:57.764Z",
+      "createdAt": "2026-06-16T16:50:29.391Z",
       "claimedAt": null,
       "completedAt": null,
       "note": "副歌段待打孔校对"
@@ -109,8 +108,8 @@
         "tempoBpm": 80,
         "paperType": "普通纸带"
       },
-      "createdAt": "2026-06-16T16:37:57.764Z",
-      "updatedAt": "2026-06-16T16:37:57.764Z"
+      "createdAt": "2026-06-16T16:50:29.391Z",
+      "updatedAt": "2026-06-16T16:50:29.391Z"
     },
     {
       "id": "tpl_20_semitrans",
@@ -122,8 +121,8 @@
         "tempoBpm": 82,
         "paperType": "半透明纸带"
       },
-      "createdAt": "2026-06-16T16:37:57.764Z",
-      "updatedAt": "2026-06-16T16:37:57.764Z"
+      "createdAt": "2026-06-16T16:50:29.391Z",
+      "updatedAt": "2026-06-16T16:50:29.391Z"
     },
     {
       "id": "tpl_20_thick",
@@ -135,8 +134,8 @@
         "tempoBpm": 76,
         "paperType": "加厚纸带"
       },
-      "createdAt": "2026-06-16T16:37:57.764Z",
-      "updatedAt": "2026-06-16T16:37:57.764Z"
+      "createdAt": "2026-06-16T16:50:29.391Z",
+      "updatedAt": "2026-06-16T16:50:29.391Z"
     },
     {
       "id": "tpl_20_slow",
@@ -148,8 +147,8 @@
         "tempoBpm": 70,
         "paperType": "普通纸带"
       },
-      "createdAt": "2026-06-16T16:37:57.764Z",
-      "updatedAt": "2026-06-16T16:37:57.764Z"
+      "createdAt": "2026-06-16T16:50:29.391Z",
+      "updatedAt": "2026-06-16T16:50:29.391Z"
     },
     {
       "id": "tpl_20_performance",
@@ -161,8 +160,8 @@
         "tempoBpm": 88,
         "paperType": "半透明纸带"
       },
-      "createdAt": "2026-06-16T16:37:57.764Z",
-      "updatedAt": "2026-06-16T16:37:57.764Z"
+      "createdAt": "2026-06-16T16:50:29.391Z",
+      "updatedAt": "2026-06-16T16:50:29.391Z"
     }
   ]
 }
