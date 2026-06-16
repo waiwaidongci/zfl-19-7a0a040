@@ -10,6 +10,8 @@
         "tempoBpm": 82,
         "paperType": "半透明纸带"
       },
+      "templateId": null,
+      "templateNameSnapshot": null,
       "createdAt": "2026-06-16T00:00:00.000Z"
     }
   ],
@@ -45,6 +47,73 @@
       "status": "open",
       "createdAt": "2026-06-16T00:00:00.000Z",
       "resolvedAt": null
+    }
+  ],
+  "stripSpecTemplates": [
+    {
+      "id": "tpl_20_standard",
+      "name": "20音标准纸带",
+      "description": "常用20音手摇风琴标准规格，宽度70mm",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 80,
+        "paperType": "普通纸带"
+      },
+      "createdAt": "2026-06-16T00:00:00.000Z",
+      "updatedAt": "2026-06-16T00:00:00.000Z"
+    },
+    {
+      "id": "tpl_20_semitrans",
+      "name": "20音半透明纸带",
+      "description": "半透明材质纸带，便于对齐试奏",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 82,
+        "paperType": "半透明纸带"
+      },
+      "createdAt": "2026-06-16T00:00:00.000Z",
+      "updatedAt": "2026-06-16T00:00:00.000Z"
+    },
+    {
+      "id": "tpl_20_thick",
+      "name": "20音加厚纸带",
+      "description": "加厚耐用纸带，适合高频演出使用",
+      "stripSpec": {
+        "widthMm": 72,
+        "scale": "20音",
+        "tempoBpm": 76,
+        "paperType": "加厚纸带"
+      },
+      "createdAt": "2026-06-16T00:00:00.000Z",
+      "updatedAt": "2026-06-16T00:00:00.000Z"
+    },
+    {
+      "id": "tpl_20_slow",
+      "name": "20音慢速练习纸带",
+      "description": "适合初学者慢速练习，推荐70BPM",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 70,
+        "paperType": "普通纸带"
+      },
+      "createdAt": "2026-06-16T00:00:00.000Z",
+      "updatedAt": "2026-06-16T00:00:00.000Z"
+    },
+    {
+      "id": "tpl_20_performance",
+      "name": "20音演出纸带",
+      "description": "高速表演用，推荐88BPM",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 88,
+        "paperType": "半透明纸带"
+      },
+      "createdAt": "2026-06-16T00:00:00.000Z",
+      "updatedAt": "2026-06-16T00:00:00.000Z"
     }
   ]
 }

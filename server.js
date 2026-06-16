@@ -17,6 +17,8 @@ const initialData = {
         tempoBpm: 82,
         paperType: "半透明纸带"
       },
+      templateId: null,
+      templateNameSnapshot: null,
       createdAt: new Date().toISOString()
     }
   ],
@@ -53,6 +55,73 @@ const initialData = {
       createdAt: new Date().toISOString(),
       resolvedAt: null
     }
+  ],
+  stripSpecTemplates: [
+    {
+      id: "tpl_20_standard",
+      name: "20音标准纸带",
+      description: "常用20音手摇风琴标准规格，宽度70mm",
+      stripSpec: {
+        widthMm: 70,
+        scale: "20音",
+        tempoBpm: 80,
+        paperType: "普通纸带"
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "tpl_20_semitrans",
+      name: "20音半透明纸带",
+      description: "半透明材质纸带，便于对齐试奏",
+      stripSpec: {
+        widthMm: 70,
+        scale: "20音",
+        tempoBpm: 82,
+        paperType: "半透明纸带"
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "tpl_20_thick",
+      name: "20音加厚纸带",
+      description: "加厚耐用纸带，适合高频演出使用",
+      stripSpec: {
+        widthMm: 72,
+        scale: "20音",
+        tempoBpm: 76,
+        paperType: "加厚纸带"
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "tpl_20_slow",
+      name: "20音慢速练习纸带",
+      description: "适合初学者慢速练习，推荐70BPM",
+      stripSpec: {
+        widthMm: 70,
+        scale: "20音",
+        tempoBpm: 70,
+        paperType: "普通纸带"
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "tpl_20_performance",
+      name: "20音演出纸带",
+      description: "高速表演用，推荐88BPM",
+      stripSpec: {
+        widthMm: 70,
+        scale: "20音",
+        tempoBpm: 88,
+        paperType: "半透明纸带"
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
   ]
 };
 
@@ -67,13 +136,30 @@ const routes = [
   "PATCH /sections/:id/check",
   "GET /issues",
   "POST /issues",
-  "PATCH /issues/:id/status"
+  "PATCH /issues/:id/status",
+  "GET /strip-spec-templates",
+  "POST /strip-spec-templates"
 ];
 
 async function ensureDb() {
   await mkdir(path.dirname(DB_FILE), { recursive: true });
   try {
-    JSON.parse(await readFile(DB_FILE, "utf8"));
+    const data = JSON.parse(await readFile(DB_FILE, "utf8"));
+    let needWrite = false;
+    if (!data.stripSpecTemplates) {
+      data.stripSpecTemplates = initialData.stripSpecTemplates;
+      needWrite = true;
+    }
+    for (const tune of data.tunes || []) {
+      if (tune.templateId === undefined) {
+        tune.templateId = null;
+        tune.templateNameSnapshot = null;
+        needWrite = true;
+      }
+    }
+    if (needWrite) {
+      await writeFile(DB_FILE, JSON.stringify(data, null, 2));
+    }
   } catch {
     await writeFile(DB_FILE, JSON.stringify(initialData, null, 2));
   }
@@ -134,6 +220,31 @@ function findTune(db, tuneId) {
   return tune;
 }
 
+function findTemplate(db, templateId) {
+  const template = db.stripSpecTemplates.find((item) => item.id === templateId);
+  if (!template) {
+    const error = new Error("纸带规格模板不存在");
+    error.status = 404;
+    throw error;
+  }
+  return template;
+}
+
+function validateStripSpec(spec) {
+  if (!spec || typeof spec !== "object") {
+    const error = new Error("stripSpec 必须是对象");
+    error.status = 400;
+    throw error;
+  }
+  const requiredFields = ["widthMm", "scale", "tempoBpm", "paperType"];
+  const missing = requiredFields.filter((f) => spec[f] === undefined || spec[f] === "");
+  if (missing.length) {
+    const error = new Error(`stripSpec 缺少字段：${missing.join(", ")}`);
+    error.status = 400;
+    throw error;
+  }
+}
+
 function buildProgress(db, tuneId) {
   findTune(db, tuneId);
   const sections = db.sections.filter((item) => item.tuneId === tuneId);
@@ -166,12 +277,38 @@ async function handle(req, res) {
 
   if (req.method === "POST" && pathname === "/tunes") {
     const body = await parseBody(req);
-    required(body, ["title", "stripSpec"]);
+    required(body, ["title"]);
+
+    let stripSpec = body.stripSpec;
+    let templateId = null;
+    let templateNameSnapshot = null;
+
+    if (body.templateId) {
+      const template = findTemplate(db, body.templateId);
+      stripSpec = JSON.parse(JSON.stringify(template.stripSpec));
+      templateId = template.id;
+      templateNameSnapshot = template.name;
+
+      if (body.stripSpec) {
+        stripSpec = { ...stripSpec, ...body.stripSpec };
+      }
+    }
+
+    if (!stripSpec) {
+      const error = new Error("必须提供 stripSpec 或 templateId");
+      error.status = 400;
+      throw error;
+    }
+
+    validateStripSpec(stripSpec);
+
     const tune = {
       id: makeId("tune"),
       title: body.title,
       composer: body.composer || "",
-      stripSpec: body.stripSpec,
+      stripSpec,
+      templateId,
+      templateNameSnapshot,
       createdAt: new Date().toISOString()
     };
     db.tunes.push(tune);
@@ -269,6 +406,31 @@ async function handle(req, res) {
     issue.note = body.note ?? issue.note;
     await writeDb(db);
     return send(res, 200, { data: issue });
+  }
+
+  if (req.method === "GET" && pathname === "/strip-spec-templates") {
+    const scale = searchParams.get("scale");
+    const templates = db.stripSpecTemplates.filter(
+      (item) => !scale || item.stripSpec.scale === scale
+    );
+    return send(res, 200, { data: templates });
+  }
+
+  if (req.method === "POST" && pathname === "/strip-spec-templates") {
+    const body = await parseBody(req);
+    required(body, ["name", "stripSpec"]);
+    validateStripSpec(body.stripSpec);
+    const template = {
+      id: makeId("tpl"),
+      name: body.name,
+      description: body.description || "",
+      stripSpec: JSON.parse(JSON.stringify(body.stripSpec)),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    db.stripSpecTemplates.push(template);
+    await writeDb(db);
+    return send(res, 201, { data: template });
   }
 
   return send(res, 404, { error: "接口不存在", routes });
