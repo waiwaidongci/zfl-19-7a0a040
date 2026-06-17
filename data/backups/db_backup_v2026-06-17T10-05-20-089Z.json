@@ -222,15 +222,7 @@
       "fixDescription": null,
       "fixTime": null,
       "reviewNote": null,
-      "editionId": "edition_demo_init",
-      "timeline": [
-        {
-          "status": "open",
-          "fromStatus": null,
-          "at": "2026-06-17T02:14:13.816Z",
-          "note": "创建问题"
-        }
-      ]
+      "editionId": "edition_demo_init"
     },
     {
       "id": "issue_mqhkbhi9_g30wfw",
@@ -246,27 +238,7 @@
       "resolvedAt": "2026-06-17T04:20:04.346Z",
       "fixDescription": "已重新打孔第41拍第12轨高音孔",
       "fixTime": "2026-06-17T04:20:04.336Z",
-      "reviewNote": "试奏确认高音已正确发声",
-      "timeline": [
-        {
-          "status": "open",
-          "fromStatus": null,
-          "at": "2026-06-17T04:20:04.065Z",
-          "note": "创建问题"
-        },
-        {
-          "status": "fixed",
-          "fromStatus": "open",
-          "at": "2026-06-17T04:20:04.336Z",
-          "note": "已重新打孔第41拍第12轨高音孔"
-        },
-        {
-          "status": "verified",
-          "fromStatus": "fixed",
-          "at": "2026-06-17T04:20:04.346Z",
-          "note": "试奏确认高音已正确发声"
-        }
-      ]
+      "reviewNote": "试奏确认高音已正确发声"
     },
     {
       "id": "issue_mqhkbhko_phwf8h",
@@ -282,21 +254,7 @@
       "resolvedAt": null,
       "fixDescription": "已调整第50拍第8轨孔位",
       "fixTime": "2026-06-17T04:20:05.324Z",
-      "reviewNote": null,
-      "timeline": [
-        {
-          "status": "open",
-          "fromStatus": null,
-          "at": "2026-06-17T04:20:04.152Z",
-          "note": "创建问题"
-        },
-        {
-          "status": "fixed",
-          "fromStatus": "open",
-          "at": "2026-06-17T04:20:05.324Z",
-          "note": "已调整第50拍第8轨孔位"
-        }
-      ]
+      "reviewNote": null
     },
     {
       "id": "issue_mqhkbhn4_nrisfe",
@@ -312,27 +270,7 @@
       "resolvedAt": "2026-06-17T04:20:05.850Z",
       "fixDescription": "已修正第72拍第5轨孔位",
       "fixTime": "2026-06-17T04:20:05.843Z",
-      "reviewNote": "试奏确认音高正确",
-      "timeline": [
-        {
-          "status": "open",
-          "fromStatus": null,
-          "at": "2026-06-17T04:20:04.240Z",
-          "note": "创建问题"
-        },
-        {
-          "status": "fixed",
-          "fromStatus": "open",
-          "at": "2026-06-17T04:20:05.843Z",
-          "note": "已修正第72拍第5轨孔位"
-        },
-        {
-          "status": "verified",
-          "fromStatus": "fixed",
-          "at": "2026-06-17T04:20:05.850Z",
-          "note": "试奏确认音高正确"
-        }
-      ]
+      "reviewNote": "试奏确认音高正确"
     },
     {
       "id": "issue_mqhl92qk_xjo9mv",
@@ -362,76 +300,6 @@
           }
         ],
         "lastCheckedAt": "2026-06-17T04:46:11.228Z"
-      },
-      "timeline": [
-        {
-          "status": "open",
-          "fromStatus": null,
-          "at": "2026-06-17T04:46:11.228Z",
-          "note": "创建问题"
-        }
-      ]
-    },
-    {
-      "id": "issue_mqhxq9ej_cudc3p",
-      "tuneId": "tune_mqhkbh9p_84nmty",
-      "editionId": "edition_mqhkbh9p_un837u",
-      "sectionId": "section_mqhkbhct_gnakam",
-      "type": "漏孔",
-      "beat": 99,
-      "lane": 3,
-      "description": "测试timeline第99拍第3轨漏孔",
-      "status": "verified",
-      "createdAt": "2026-06-17T10:35:28.410Z",
-      "resolvedAt": "2026-06-17T10:36:12.646Z",
-      "fixDescription": "二次修复完成",
-      "fixTime": "2026-06-17T10:36:12.624Z",
-      "reviewNote": "复核通过",
-      "timeline": [
-        {
-          "status": "open",
-          "fromStatus": null,
-          "at": "2026-06-17T10:35:28.410Z",
-          "note": "创建问题"
-        },
-        {
-          "status": "fixed",
-          "fromStatus": "open",
-          "at": "2026-06-17T10:35:43.312Z",
-          "note": "已修复第99拍第3轨漏孔"
-        },
-        {
-          "status": "reopened",
-          "fromStatus": "fixed",
-          "at": "2026-06-17T10:35:57.636Z",
-          "note": "修复不完整，需要重新检查"
-        },
-        {
-          "status": "fixed",
-          "fromStatus": "reopened",
-          "at": "2026-06-17T10:36:12.624Z",
-          "note": "二次修复完成"
-        },
-        {
-          "status": "verified",
-          "fromStatus": "fixed",
-          "at": "2026-06-17T10:36:12.646Z",
-          "note": "复核通过"
-        }
-      ],
-      "conflicts": {
-        "warnings": [
-          {
-            "type": "issue_beat_out_of_sections",
-            "severity": "warning",
-            "message": "问题拍点 99 不在任何已定义的区间范围内",
-            "details": {
-              "beat": 99
-            },
-            "detectedAt": "2026-06-17T10:35:28.412Z"
-          }
-        ],
-        "lastCheckedAt": "2026-06-17T10:35:28.412Z"
       }
     }
   ],
@@ -812,5 +680,5 @@
       "createdAt": "2026-06-17T04:20:05.417Z"
     }
   ],
-  "_dataVersion": 6
+  "_dataVersion": 5
 }

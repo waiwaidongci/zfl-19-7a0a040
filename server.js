@@ -7,7 +7,7 @@ const DB_FILE = path.join(__dirname, "data", "db.json");
 const BACKUP_DIR = path.join(__dirname, "data", "backups");
 const MIGRATION_LOG_FILE = path.join(__dirname, "data", "migration-log.json");
 
-const CURRENT_DATA_VERSION = 5;
+const CURRENT_DATA_VERSION = 6;
 const URGENT_HOURS_THRESHOLD = 24;
 
 const VALID_ISSUE_STATUSES = ["open", "fixed", "verified", "reopened"];
@@ -107,7 +107,15 @@ const initialData = {
       resolvedAt: null,
       fixDescription: null,
       fixTime: null,
-      reviewNote: null
+      reviewNote: null,
+      timeline: [
+        {
+          status: "open",
+          fromStatus: null,
+          at: new Date().toISOString(),
+          note: "创建问题"
+        }
+      ]
     }
   ],
   playSessions: [],
@@ -787,12 +795,69 @@ function migrate_v4_to_v5(data, report) {
   return changes.length > 0;
 }
 
+function migrate_v5_to_v6(data, report) {
+  const changes = [];
+
+  for (const issue of data.issues || []) {
+    if (issue.timeline !== undefined) continue;
+
+    const timeline = [];
+    const createdAt = issue.createdAt || new Date().toISOString();
+
+    timeline.push({
+      status: "open",
+      fromStatus: null,
+      at: createdAt,
+      note: "创建问题"
+    });
+
+    if (issue.status === "fixed" || issue.status === "verified" || issue.status === "reopened") {
+      timeline.push({
+        status: "fixed",
+        fromStatus: "open",
+        at: issue.fixTime || createdAt,
+        note: issue.fixDescription || null
+      });
+    }
+
+    if (issue.status === "verified") {
+      timeline.push({
+        status: "verified",
+        fromStatus: "fixed",
+        at: issue.resolvedAt || issue.fixTime || createdAt,
+        note: issue.reviewNote || null
+      });
+    }
+
+    if (issue.status === "reopened") {
+      timeline.push({
+        status: "reopened",
+        fromStatus: "fixed",
+        at: issue.fixTime || createdAt,
+        note: issue.reviewNote || null
+      });
+    }
+
+    issue.timeline = timeline;
+  }
+
+  const migratedCount = (data.issues || []).length;
+  if (migratedCount > 0) {
+    changes.push(`added timeline to ${migratedCount} issues`);
+  }
+
+  data._dataVersion = 6;
+  report.steps.push({ version: 6, changes });
+  return changes.length > 0;
+}
+
 const MIGRATIONS = [
   { from: 0, to: 1, run: migrate_v0_to_v1 },
   { from: 1, to: 2, run: migrate_v1_to_v2 },
   { from: 2, to: 3, run: migrate_v2_to_v3 },
   { from: 3, to: 4, run: migrate_v3_to_v4 },
-  { from: 4, to: 5, run: migrate_v4_to_v5 }
+  { from: 4, to: 5, run: migrate_v4_to_v5 },
+  { from: 5, to: 6, run: migrate_v5_to_v6 }
 ];
 
 async function runMigrations() {
@@ -2307,6 +2372,7 @@ async function handle(req, res) {
         return send(res, 400, { error: "区间不存在于指定版次中" });
       }
     }
+    const now = new Date().toISOString();
     const issue = {
       id: makeId("issue"),
       tuneId: body.tuneId,
@@ -2317,11 +2383,19 @@ async function handle(req, res) {
       lane: body.lane === undefined ? null : Number(body.lane),
       description: body.description,
       status: "open",
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       resolvedAt: null,
       fixDescription: null,
       fixTime: null,
-      reviewNote: null
+      reviewNote: null,
+      timeline: [
+        {
+          status: "open",
+          fromStatus: null,
+          at: now,
+          note: "创建问题"
+        }
+      ]
     };
 
     const conflicts = detectConflictsForNewIssue(db, body.tuneId, issue);
@@ -2362,29 +2436,43 @@ async function handle(req, res) {
     validateIssueStatus(body.status);
     validateIssueStatusTransition(issue.status, body.status);
 
+    const oldStatus = issue.status;
     const newStatus = normalizeIssueStatus(body.status);
     const now = new Date().toISOString();
 
     issue.status = newStatus;
 
+    let timelineNote = null;
+
     if (newStatus === "fixed") {
       required(body, ["fixDescription"]);
       issue.fixDescription = body.fixDescription;
       issue.fixTime = now;
+      timelineNote = body.fixDescription;
     }
 
     if (newStatus === "verified") {
       issue.resolvedAt = now;
       issue.reviewNote = body.reviewNote ?? issue.reviewNote;
+      timelineNote = body.reviewNote ?? issue.reviewNote;
     }
 
     if (newStatus === "reopened") {
       required(body, ["reviewNote"]);
       issue.reviewNote = body.reviewNote;
       issue.resolvedAt = null;
+      timelineNote = body.reviewNote;
     }
 
     issue.note = body.note ?? issue.note;
+
+    if (!issue.timeline) issue.timeline = [];
+    issue.timeline.push({
+      status: newStatus,
+      fromStatus: oldStatus,
+      at: now,
+      note: timelineNote
+    });
 
     await writeDb(db);
     return send(res, 200, { data: issue });
