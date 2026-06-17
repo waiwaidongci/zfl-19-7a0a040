@@ -1,5 +1,5 @@
 const http = require("http");
-const { readFile, writeFile, mkdir, copyFile } = require("fs/promises");
+const { readFile, writeFile, mkdir, copyFile, rename, unlink } = require("fs/promises");
 const path = require("path");
 
 const PORT = Number(process.env.PORT || 3019);
@@ -7,7 +7,7 @@ const DB_FILE = path.join(__dirname, "data", "db.json");
 const BACKUP_DIR = path.join(__dirname, "data", "backups");
 const MIGRATION_LOG_FILE = path.join(__dirname, "data", "migration-log.json");
 
-const CURRENT_DATA_VERSION = 2;
+const CURRENT_DATA_VERSION = 3;
 
 const VALID_ISSUE_STATUSES = ["open", "fixed", "verified", "reopened"];
 const VALID_TASK_STATUSES = ["pending", "claimed", "completed"];
@@ -195,6 +195,20 @@ const initialData = {
 };
 
 initialData._dataVersion = CURRENT_DATA_VERSION;
+
+async function atomicWriteFile(targetPath, content) {
+  const tmpPath = `${targetPath}.tmp.${Date.now().toString(36)}`;
+  try {
+    await writeFile(tmpPath, content);
+    await rename(tmpPath, targetPath);
+  } catch (err) {
+    try {
+      await unlink(tmpPath);
+    } catch {
+    }
+    throw err;
+  }
+}
 
 async function createBackup(dbFilePath) {
   await mkdir(BACKUP_DIR, { recursive: true });
@@ -508,9 +522,219 @@ function migrate_v1_to_v2(data, report) {
   return changes.length > 0;
 }
 
+function migrate_v2_to_v3(data, report) {
+  const changes = [];
+  const validTuneIds = new Set((data.tunes || []).map((t) => t.id));
+  const validEditionIds = new Set((data.tapeEditions || []).map((e) => e.id));
+
+  for (const tune of data.tunes) {
+    if (tune.currentEditionId && !validEditionIds.has(tune.currentEditionId)) {
+      tune.currentEditionId = null;
+      changes.push(`cleared invalid currentEditionId on tune ${tune.id}`);
+    }
+  }
+
+  const currentEditionsByTune = {};
+  for (const edition of data.tapeEditions || []) {
+    if (edition.isCurrent && validTuneIds.has(edition.tuneId)) {
+      currentEditionsByTune[edition.tuneId] = edition;
+    }
+  }
+
+  const validSectionIds = new Set();
+  const tunesWithCurrentEdition = new Set(Object.keys(currentEditionsByTune));
+  for (const tuneId of tunesWithCurrentEdition) {
+    const edition = currentEditionsByTune[tuneId];
+    for (const s of edition.sectionsSnapshot || []) {
+      if (s.id && s.tuneId === tuneId) {
+        validSectionIds.add(s.id);
+      }
+    }
+  }
+  for (const section of data.sections || []) {
+    if (section.id && section.tuneId && validTuneIds.has(section.tuneId)) {
+      if (!tunesWithCurrentEdition.has(section.tuneId)) {
+        validSectionIds.add(section.id);
+      }
+    }
+  }
+
+  const removedIssues = [];
+  data.issues = (data.issues || []).filter((issue) => {
+    let keep = true;
+    if (issue.tuneId && !validTuneIds.has(issue.tuneId)) {
+      removedIssues.push({ id: issue.id, reason: "invalid tuneId reference" });
+      keep = false;
+    }
+    if (keep && issue.sectionId && !validSectionIds.has(issue.sectionId)) {
+      removedIssues.push({ id: issue.id, reason: "invalid sectionId reference" });
+      keep = false;
+    }
+    if (keep && issue.editionId && !validEditionIds.has(issue.editionId)) {
+      issue.editionId = null;
+      changes.push(`cleared invalid editionId on issue ${issue.id}`);
+    }
+    return keep;
+  });
+  if (removedIssues.length > 0) {
+    changes.push(`removed ${removedIssues.length} issues with dangling references`);
+    report.removedIssues = report.removedIssues ? [...report.removedIssues, ...removedIssues] : removedIssues;
+  }
+
+  const removedTasks = [];
+  data.punchTasks = (data.punchTasks || []).filter((task) => {
+    let keep = true;
+    if (task.tuneId && !validTuneIds.has(task.tuneId)) {
+      removedTasks.push({ id: task.id, reason: "invalid tuneId reference" });
+      keep = false;
+    }
+    if (keep && task.sectionId && !validSectionIds.has(task.sectionId)) {
+      removedTasks.push({ id: task.id, reason: "invalid sectionId reference" });
+      keep = false;
+    }
+    if (keep && task.priority && !VALID_PRIORITIES.includes(task.priority)) {
+      task.priority = "medium";
+      changes.push(`fixed invalid priority on task ${task.id}`);
+    }
+    if (keep && task.status && !VALID_TASK_STATUSES.includes(task.status)) {
+      task.status = "pending";
+      changes.push(`fixed invalid status on task ${task.id}`);
+    }
+    return keep;
+  });
+  if (removedTasks.length > 0) {
+    changes.push(`removed ${removedTasks.length} punch tasks with dangling references`);
+    report.removedTasks = report.removedTasks ? [...report.removedTasks, ...removedTasks] : removedTasks;
+  }
+
+  let clearedPlaySessionSectionRefs = 0;
+  for (const session of data.playSessions || []) {
+    if (session.startSectionId && !validSectionIds.has(session.startSectionId)) {
+      session.startSectionId = null;
+      clearedPlaySessionSectionRefs++;
+    }
+    if (session.endSectionId && !validSectionIds.has(session.endSectionId)) {
+      session.endSectionId = null;
+      clearedPlaySessionSectionRefs++;
+    }
+    if (session.tuneId && !validTuneIds.has(session.tuneId)) {
+    }
+  }
+  if (clearedPlaySessionSectionRefs > 0) {
+    changes.push(`cleared ${clearedPlaySessionSectionRefs} dangling sectionId references in playSessions`);
+  }
+
+  data.playSessions = (data.playSessions || []).filter((session) =>
+    !session.tuneId || validTuneIds.has(session.tuneId)
+  );
+
+  data.reportSnapshots = (data.reportSnapshots || []).filter((snap) =>
+    !snap.tuneId || validTuneIds.has(snap.tuneId)
+  );
+
+  const removedSections = [];
+  data.sections = (data.sections || []).filter((section) => {
+    if (!section.tuneId || !validTuneIds.has(section.tuneId)) {
+      removedSections.push({ id: section.id, reason: "invalid tuneId reference" });
+      return false;
+    }
+    if (!validSectionIds.has(section.id)) {
+      removedSections.push({ id: section.id, reason: "section not present in current edition or invalid" });
+      return false;
+    }
+    return true;
+  });
+  if (removedSections.length > 0) {
+    changes.push(`removed ${removedSections.length} orphan sections from top-level sections array`);
+    report.removedSections = report.removedSections ? [...report.removedSections, ...removedSections] : removedSections;
+  }
+
+  const removedEditions = [];
+  data.tapeEditions = (data.tapeEditions || []).filter((edition) => {
+    if (edition.tuneId && !validTuneIds.has(edition.tuneId)) {
+      removedEditions.push({ id: edition.id, reason: "invalid tuneId reference" });
+      return false;
+    }
+    return true;
+  });
+  if (removedEditions.length > 0) {
+    changes.push(`removed ${removedEditions.length} tape editions with dangling tune references`);
+    report.removedEditions = report.removedEditions ? [...report.removedEditions, ...removedEditions] : removedEditions;
+  }
+
+  let clearedSnapshotSections = 0;
+  let danglingSnapshotTuneSections = 0;
+  for (const edition of data.tapeEditions || []) {
+    if (!edition.sectionsSnapshot) {
+      edition.sectionsSnapshot = [];
+      continue;
+    }
+    const beforeCount = edition.sectionsSnapshot.length;
+    edition.sectionsSnapshot = edition.sectionsSnapshot.filter((s) => {
+      if (s.tuneId && !validTuneIds.has(s.tuneId)) {
+        danglingSnapshotTuneSections++;
+        return false;
+      }
+      if (s.id && !validSectionIds.has(s.id)) {
+        clearedSnapshotSections++;
+        return false;
+      }
+      return true;
+    });
+    if (edition.sectionsSnapshot.length !== beforeCount) {
+      changes.push(`cleaned ${beforeCount - edition.sectionsSnapshot.length} dangling sections from edition ${edition.id} snapshot`);
+    }
+  }
+  if (clearedSnapshotSections > 0 || danglingSnapshotTuneSections > 0) {
+    changes.push(`total: removed ${clearedSnapshotSections} sections with dangling sectionId, ${danglingSnapshotTuneSections} with dangling tuneId from all edition snapshots`);
+  }
+
+  let reSyncCount = 0;
+  for (const tuneId of Object.keys(currentEditionsByTune)) {
+    if (!validTuneIds.has(tuneId)) continue;
+    const currentEdition = currentEditionsByTune[tuneId];
+    if (!validEditionIds.has(currentEdition.id)) continue;
+    const tuneSections = (data.sections || []).filter((s) => s.tuneId === tuneId);
+    const snapIds = new Set((currentEdition.sectionsSnapshot || []).map((s) => s.id));
+    const sectionIds = new Set(tuneSections.map((s) => s.id));
+
+    for (const snap of currentEdition.sectionsSnapshot || []) {
+      if (snap.id && !sectionIds.has(snap.id)) {
+        data.sections.push({ ...snap, tuneId });
+        reSyncCount++;
+      }
+    }
+    for (const sec of tuneSections) {
+      if (!snapIds.has(sec.id)) {
+        currentEdition.sectionsSnapshot.push({ ...sec });
+        reSyncCount++;
+      }
+    }
+  }
+  if (reSyncCount > 0) {
+    changes.push(`re-synced ${reSyncCount} entries between sections array and current edition snapshots`);
+  }
+
+  let issueFixCount = 0;
+  for (const issue of data.issues || []) {
+    const originalStatus = issue.status;
+    const normalized = normalizeIssueStatusForMigration(issue.status);
+    if (normalized !== issue.status) {
+      issue.status = normalized;
+      issueFixCount++;
+      changes.push(`fixed issue status: ${originalStatus} -> ${normalized}`);
+    }
+  }
+
+  data._dataVersion = 3;
+  report.steps.push({ version: 3, changes });
+  return changes.length > 0;
+}
+
 const MIGRATIONS = [
   { from: 0, to: 1, run: migrate_v0_to_v1 },
-  { from: 1, to: 2, run: migrate_v1_to_v2 }
+  { from: 1, to: 2, run: migrate_v1_to_v2 },
+  { from: 2, to: 3, run: migrate_v2_to_v3 }
 ];
 
 async function runMigrations() {
@@ -585,7 +809,7 @@ async function runMigrations() {
     data._dataVersion = CURRENT_DATA_VERSION;
 
     if (anyChanges || sourceVersion < CURRENT_DATA_VERSION) {
-      await writeFile(DB_FILE, JSON.stringify(data, null, 2));
+      await atomicWriteFile(DB_FILE, JSON.stringify(data, null, 2));
     }
 
     const logEntry = {
@@ -682,8 +906,12 @@ const routes = [
 async function ensureDb() {
   const result = await runMigrations();
   if (result.initialized && result.error) {
-    await writeFile(DB_FILE, JSON.stringify(initialData, null, 2));
-    migrationState.dataVersion = CURRENT_DATA_VERSION;
+    try {
+      await readFile(DB_FILE, "utf8");
+    } catch {
+      await atomicWriteFile(DB_FILE, JSON.stringify(initialData, null, 2));
+      migrationState.dataVersion = CURRENT_DATA_VERSION;
+    }
   }
 }
 
@@ -696,7 +924,7 @@ async function writeDb(data) {
   if (data._dataVersion === undefined) {
     data._dataVersion = CURRENT_DATA_VERSION;
   }
-  await writeFile(DB_FILE, JSON.stringify(data, null, 2));
+  await atomicWriteFile(DB_FILE, JSON.stringify(data, null, 2));
 }
 
 function send(res, status, body) {
