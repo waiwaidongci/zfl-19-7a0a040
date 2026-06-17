@@ -1012,6 +1012,7 @@ const routes = [
   "POST /tunes/:id/report/snapshot",
   "GET /tunes/:id/report/snapshots",
   "GET /report-snapshots/:id",
+  "GET /report-snapshots/:baseId/compare/:targetId",
   "PATCH /sections/:id/check",
   "PUT /sections/:id",
   "GET /issues",
@@ -2274,6 +2275,143 @@ function buildReport(db, tuneId) {
     },
     suggestedNextSteps: nextSteps,
     generatedAt: new Date().toISOString()
+  };
+}
+
+function compareSnapshots(baseSnapshot, targetSnapshot) {
+  if (baseSnapshot.tuneId !== targetSnapshot.tuneId) {
+    const error = new Error("无法比较不同曲目的报告快照");
+    error.status = 400;
+    throw error;
+  }
+
+  const base = baseSnapshot.report;
+  const target = targetSnapshot.report;
+
+  const coverageChange = {
+    base: { ...base.coverage },
+    target: { ...target.coverage },
+    delta: {
+      totalSections: target.coverage.totalSections - base.coverage.totalSections,
+      checkedSections: target.coverage.checkedSections - base.coverage.checkedSections,
+      uncheckedSections: target.coverage.uncheckedSections - base.coverage.uncheckedSections,
+      coveragePercent: target.coverage.coveragePercent - base.coverage.coveragePercent
+    }
+  };
+
+  const baseOpenIssueIds = new Set(base.openIssueDetails.map((i) => i.id));
+  const targetOpenIssueIds = new Set(target.openIssueDetails.map((i) => i.id));
+  const newlyOpened = target.openIssueDetails.filter((i) => !baseOpenIssueIds.has(i.id));
+  const newlyClosed = base.openIssueDetails.filter((i) => !targetOpenIssueIds.has(i.id));
+  const stillOpen = target.openIssueDetails.filter((i) => baseOpenIssueIds.has(i.id));
+
+  const openIssuesChange = {
+    base: {
+      count: base.openIssueDetails.length,
+      details: base.openIssueDetails
+    },
+    target: {
+      count: target.openIssueDetails.length,
+      details: target.openIssueDetails
+    },
+    delta: {
+      count: target.openIssueDetails.length - base.openIssueDetails.length,
+      newlyOpened,
+      newlyClosed,
+      stillOpen
+    }
+  };
+
+  const allIssueTypes = new Set([
+    ...Object.keys(base.issueCountByType),
+    ...Object.keys(target.issueCountByType)
+  ]);
+  const issueTypeChanges = {};
+  for (const type of allIssueTypes) {
+    const baseCount = base.issueCountByType[type] || 0;
+    const targetCount = target.issueCountByType[type] || 0;
+    issueTypeChanges[type] = {
+      base: baseCount,
+      target: targetCount,
+      delta: targetCount - baseCount
+    };
+  }
+
+  const baseStepKeys = new Set();
+  const baseStepsMap = new Map();
+  for (const step of base.suggestedNextSteps) {
+    const key = `${step.action}_${step.sectionId || ""}`;
+    baseStepKeys.add(key);
+    baseStepsMap.set(key, step);
+  }
+  const targetStepKeys = new Set();
+  const targetStepsMap = new Map();
+  for (const step of target.suggestedNextSteps) {
+    const key = `${step.action}_${step.sectionId || ""}`;
+    targetStepKeys.add(key);
+    targetStepsMap.set(key, step);
+  }
+  const addedSteps = [];
+  for (const key of targetStepKeys) {
+    if (!baseStepKeys.has(key)) {
+      addedSteps.push(targetStepsMap.get(key));
+    }
+  }
+  const removedSteps = [];
+  for (const key of baseStepKeys) {
+    if (!targetStepKeys.has(key)) {
+      removedSteps.push(baseStepsMap.get(key));
+    }
+  }
+  const changedSteps = [];
+  for (const key of baseStepKeys) {
+    if (targetStepKeys.has(key)) {
+      const baseStep = baseStepsMap.get(key);
+      const targetStep = targetStepsMap.get(key);
+      if (baseStep.priority !== targetStep.priority || baseStep.note !== targetStep.note) {
+        changedSteps.push({
+          base: baseStep,
+          target: targetStep
+        });
+      }
+    }
+  }
+
+  const suggestedNextStepsChange = {
+    base: {
+      count: base.suggestedNextSteps.length,
+      details: base.suggestedNextSteps
+    },
+    target: {
+      count: target.suggestedNextSteps.length,
+      details: target.suggestedNextSteps
+    },
+    delta: {
+      count: target.suggestedNextSteps.length - base.suggestedNextSteps.length,
+      added: addedSteps,
+      removed: removedSteps,
+      changed: changedSteps
+    }
+  };
+
+  return {
+    baseSnapshot: {
+      id: baseSnapshot.id,
+      label: baseSnapshot.label,
+      createdAt: baseSnapshot.createdAt
+    },
+    targetSnapshot: {
+      id: targetSnapshot.id,
+      label: targetSnapshot.label,
+      createdAt: targetSnapshot.createdAt
+    },
+    tuneId: baseSnapshot.tuneId,
+    tuneTitle: base.tuneTitle,
+    coverageChange,
+    openIssuesChange,
+    issueTypeChanges,
+    suggestedNextStepsChange,
+    comparedAt: new Date().toISOString()
   };
 }
 
@@ -3585,7 +3723,13 @@ async function handle(req, res) {
         id: s.id,
         tuneId: s.tuneId,
         label: s.label,
-        createdAt: s.createdAt
+        createdAt: s.createdAt,
+        coveragePercent: s.report.coverage.coveragePercent,
+        totalIssues: s.report.summary.totalIssues,
+        openIssues: s.report.summary.openIssues,
+        closedIssues: s.report.summary.closedIssues,
+        totalSections: s.report.coverage.totalSections,
+        checkedSections: s.report.coverage.checkedSections
       }));
     return send(res, 200, { data: snapshots });
   }
@@ -3596,6 +3740,18 @@ async function handle(req, res) {
     const snapshot = db.reportSnapshots.find((s) => s.id === snapshotId);
     if (!snapshot) return send(res, 404, { error: "报告快照不存在" });
     return send(res, 200, { data: snapshot });
+  }
+
+  const snapshotCompareMatch = pathname.match(/^\/report-snapshots\/([^/]+)\/compare\/([^/]+)$/);
+  if (snapshotCompareMatch && req.method === "GET") {
+    const baseId = snapshotCompareMatch[1];
+    const targetId = snapshotCompareMatch[2];
+    const baseSnapshot = db.reportSnapshots.find((s) => s.id === baseId);
+    const targetSnapshot = db.reportSnapshots.find((s) => s.id === targetId);
+    if (!baseSnapshot) return send(res, 404, { error: "基准报告快照不存在" });
+    if (!targetSnapshot) return send(res, 404, { error: "目标报告快照不存在" });
+    const comparison = compareSnapshots(baseSnapshot, targetSnapshot);
+    return send(res, 200, { data: comparison });
   }
 
   return send(res, 404, { error: "接口不存在", routes });
