@@ -895,7 +895,9 @@ const routes = [
   "GET /play-sessions/:id",
   "PATCH /play-sessions/:id/end",
   "GET /strip-spec-templates",
+  "GET /strip-spec-templates/:id",
   "POST /strip-spec-templates",
+  "PUT /strip-spec-templates/:id",
   "GET /punch-tasks",
   "POST /punch-tasks/generate",
   "POST /punch-tasks",
@@ -2406,6 +2408,33 @@ async function handle(req, res) {
     db.stripSpecTemplates.push(template);
     await writeDb(db);
     return send(res, 201, { data: template });
+  }
+
+  const templateDetailMatch = pathname.match(/^\/strip-spec-templates\/([^/]+)$/);
+  if (templateDetailMatch) {
+    const templateId = templateDetailMatch[1];
+    const template = findTemplate(db, templateId);
+
+    if (req.method === "GET") {
+      return send(res, 200, { data: template });
+    }
+
+    if (req.method === "PUT") {
+      const body = await parseBody(req);
+      if (body.name !== undefined) {
+        template.name = body.name;
+      }
+      if (body.description !== undefined) {
+        template.description = body.description;
+      }
+      if (body.stripSpec !== undefined) {
+        validateStripSpec(body.stripSpec);
+        template.stripSpec = JSON.parse(JSON.stringify(body.stripSpec));
+      }
+      template.updatedAt = new Date().toISOString();
+      await writeDb(db);
+      return send(res, 200, { data: template });
+    }
   }
 
   if (req.method === "GET" && pathname === "/punch-tasks") {

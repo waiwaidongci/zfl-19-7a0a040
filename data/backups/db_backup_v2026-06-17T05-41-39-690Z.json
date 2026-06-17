@@ -1,0 +1,205 @@
+{
+  "_dataVersion": 2,
+  "tunes": [
+    {
+      "id": "tune_valid_1",
+      "title": "合法曲目1",
+      "composer": "测试",
+      "stripSpec": { "widthMm": 70, "scale": "20音", "tempoBpm": 80, "paperType": "普通纸带" },
+      "templateId": null,
+      "templateNameSnapshot": null,
+      "currentEditionId": "edition_valid_1",
+      "archived": false,
+      "archivedAt": null,
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "tune_valid_2",
+      "title": "合法曲目2",
+      "composer": "测试",
+      "stripSpec": { "widthMm": 70, "scale": "20音", "tempoBpm": 80, "paperType": "普通纸带" },
+      "templateId": null,
+      "templateNameSnapshot": null,
+      "currentEditionId": "edition_valid_2",
+      "archived": false,
+      "archivedAt": null,
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section_valid_1",
+      "tuneId": "tune_valid_1",
+      "startBeat": 1,
+      "endBeat": 32,
+      "laneRange": "1-10",
+      "checked": true,
+      "note": "合法section"
+    },
+    {
+      "id": "section_orphan_tune",
+      "tuneId": "tune_nonexistent",
+      "startBeat": 1,
+      "endBeat": 16,
+      "laneRange": "5-15",
+      "checked": false,
+      "note": "悬空tuneId"
+    },
+    {
+      "id": "section_orphan_no_snapshot",
+      "tuneId": "tune_valid_1",
+      "startBeat": 100,
+      "endBeat": 120,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "不在当前edition snapshot中"
+    }
+  ],
+  "issues": [
+    {
+      "id": "issue_valid",
+      "tuneId": "tune_valid_1",
+      "sectionId": "section_valid_1",
+      "editionId": "edition_valid_1",
+      "type": "漏孔",
+      "beat": 10,
+      "lane": 5,
+      "description": "合法issue",
+      "status": "open",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "resolvedAt": null,
+      "fixDescription": null,
+      "fixTime": null,
+      "reviewNote": null
+    },
+    {
+      "id": "issue_dangling_section",
+      "tuneId": "tune_valid_1",
+      "sectionId": "section_deleted_xyz",
+      "type": "错孔",
+      "beat": 5,
+      "lane": 3,
+      "description": "悬空sectionId",
+      "status": "invalid_status_should_be_open",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "resolvedAt": null,
+      "fixDescription": null,
+      "fixTime": null,
+      "reviewNote": null
+    }
+  ],
+  "punchTasks": [
+    {
+      "id": "task_valid",
+      "tuneId": "tune_valid_1",
+      "sectionId": "section_valid_1",
+      "priority": "high",
+      "status": "pending",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "claimedAt": null,
+      "completedAt": null,
+      "note": "合法task"
+    },
+    {
+      "id": "task_dangling_section",
+      "tuneId": "tune_valid_1",
+      "sectionId": "section_deleted_xyz",
+      "priority": "invalid_priority",
+      "status": "invalid_status",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "claimedAt": null,
+      "completedAt": null,
+      "note": "悬空sectionId和非法状态"
+    }
+  ],
+  "tapeEditions": [
+    {
+      "id": "edition_valid_1",
+      "tuneId": "tune_valid_1",
+      "version": 1,
+      "source": "initial",
+      "sourceEditionId": null,
+      "description": "曲1版次",
+      "sectionsSnapshot": [
+        {
+          "id": "section_valid_1",
+          "tuneId": "tune_valid_1",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "合法section"
+        },
+        {
+          "id": "section_snapshot_dangling",
+          "tuneId": "tune_valid_1",
+          "startBeat": 50,
+          "endBeat": 80,
+          "laneRange": "3-15",
+          "checked": false,
+          "note": "snapshot中的悬空section，不在顶层sections数组"
+        }
+      ],
+      "isCurrent": true,
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "edition_valid_2",
+      "tuneId": "tune_valid_2",
+      "version": 1,
+      "source": "initial",
+      "sourceEditionId": null,
+      "description": "曲2版次",
+      "sectionsSnapshot": [
+        {
+          "id": "section_snapshot_dangling_tuneid",
+          "tuneId": "tune_nonexistent",
+          "startBeat": 1,
+          "endBeat": 10,
+          "laneRange": "1-5",
+          "checked": false,
+          "note": "snapshot中section的tuneId悬空"
+        }
+      ],
+      "isCurrent": true,
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    }
+  ],
+  "playSessions": [
+    {
+      "id": "ps_1",
+      "tuneId": "tune_valid_1",
+      "player": "测试员",
+      "startSectionId": "section_deleted_xyz",
+      "endSectionId": "section_valid_1",
+      "issuesFound": 0,
+      "note": "startSectionId悬空",
+      "status": "ended",
+      "startedAt": "2025-01-01T00:00:00.000Z",
+      "endedAt": "2025-01-01T01:00:00.000Z"
+    },
+    {
+      "id": "ps_orphan_tune",
+      "tuneId": "tune_nonexistent",
+      "player": "测试员",
+      "startSectionId": null,
+      "endSectionId": null,
+      "issuesFound": 0,
+      "note": "tuneId悬空",
+      "status": "ended",
+      "startedAt": "2025-01-01T00:00:00.000Z",
+      "endedAt": "2025-01-01T01:00:00.000Z"
+    }
+  ],
+  "stripSpecTemplates": [
+    {
+      "id": "tpl_20_standard",
+      "name": "20音标准纸带",
+      "description": "常用20音手摇风琴标准规格",
+      "stripSpec": { "widthMm": 70, "scale": "20音", "tempoBpm": 80, "paperType": "普通纸带" },
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    }
+  ],
+  "reportSnapshots": []
+}

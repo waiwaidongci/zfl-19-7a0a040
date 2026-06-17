@@ -31,7 +31,9 @@ PORT=3019 node server.js
 
 ### 纸带规格模板
 - `GET /strip-spec-templates?scale=`（模板列表，可选按音阶筛选）
+- `GET /strip-spec-templates/:id`（模板详情）
 - `POST /strip-spec-templates`（创建新模板）
+- `PUT /strip-spec-templates/:id`（更新模板，更新只影响后续新建曲目，已创建曲目保留快照不被回写）
 
 ### 打孔任务队列
 - `GET /punch-tasks?tuneId=&status=&priority=&assignee=&onlyUnassigned=`（查询任务，支持多条件筛选，结果按优先级+创建时间排序）
@@ -211,6 +213,22 @@ curl -X POST http://127.0.0.1:3019/strip-spec-templates \
       "scale": "20音",
       "tempoBpm": 85,
       "paperType": "进口纸带"
+    }
+  }'
+
+# 3b. 查看模板详情
+curl http://127.0.0.1:3019/strip-spec-templates/tpl_20_standard
+
+# 3c. 更新模板（只影响后续新建曲目，已创建曲目保留快照）
+curl -X PUT http://127.0.0.1:3019/strip-spec-templates/tpl_20_standard \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "20音标准纸带V2",
+    "stripSpec": {
+      "widthMm": 70,
+      "scale": "20音",
+      "tempoBpm": 82,
+      "paperType": "普通纸带"
     }
   }'
 

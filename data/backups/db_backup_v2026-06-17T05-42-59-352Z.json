@@ -33,23 +33,6 @@
       "archived": false,
       "archivedAt": null,
       "createdAt": "2026-06-17T04:20:03.757Z"
-    },
-    {
-      "id": "tune_mqhpg6jr_xlxrtr",
-      "title": "快照测试曲目",
-      "composer": "",
-      "stripSpec": {
-        "widthMm": 70,
-        "scale": "20音",
-        "tempoBpm": 82,
-        "paperType": "普通纸带"
-      },
-      "templateId": "tpl_20_standard",
-      "templateNameSnapshot": "20音标准纸带V2",
-      "currentEditionId": "edition_mqhpg6jr_rpnp89",
-      "archived": false,
-      "archivedAt": null,
-      "createdAt": "2026-06-17T06:43:41.223Z"
     }
   ],
   "tapeEditions": [
@@ -148,17 +131,6 @@
       ],
       "isCurrent": true,
       "createdAt": "2026-06-17T04:20:03.757Z"
-    },
-    {
-      "id": "edition_mqhpg6jr_rpnp89",
-      "tuneId": "tune_mqhpg6jr_xlxrtr",
-      "version": 1,
-      "source": "initial",
-      "sourceEditionId": null,
-      "description": "初始版次",
-      "sectionsSnapshot": [],
-      "isCurrent": true,
-      "createdAt": "2026-06-17T06:43:41.223Z"
     }
   ],
   "sections": [
@@ -358,7 +330,7 @@
         "paperType": "普通纸带"
       },
       "createdAt": "2026-06-17T02:14:13.816Z",
-      "updatedAt": "2026-06-17T06:44:06.614Z"
+      "updatedAt": "2026-06-17T02:14:13.816Z"
     },
     {
       "id": "tpl_20_semitrans",
@@ -611,5 +583,5 @@
       "createdAt": "2026-06-17T04:20:05.417Z"
     }
   ],
-  "_dataVersion": 3
+  "_dataVersion": 2
 }
