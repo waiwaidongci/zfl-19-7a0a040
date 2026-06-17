@@ -2453,8 +2453,8 @@ async function handle(req, res) {
 
     if (newStatus === "verified") {
       issue.resolvedAt = now;
-      issue.reviewNote = body.reviewNote ?? issue.reviewNote;
-      timelineNote = body.reviewNote ?? issue.reviewNote;
+      issue.reviewNote = body.reviewNote ?? issue.reviewNote ?? "复核通过";
+      timelineNote = issue.reviewNote;
     }
 
     if (newStatus === "reopened") {
