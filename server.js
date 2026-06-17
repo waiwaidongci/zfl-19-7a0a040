@@ -577,14 +577,8 @@ function buildProgress(db, tuneId) {
 function buildReport(db, tuneId) {
   const tune = findTune(db, tuneId);
   const edition = resolveTuneEdition(db, tuneId, null);
-  const sections = edition
-    ? edition.sectionsSnapshot
-    : db.sections.filter((item) => item.tuneId === tuneId);
-  const issues = db.issues.filter(
-    (item) =>
-      item.tuneId === tuneId &&
-      (!edition || item.editionId === edition.id)
-  );
+  const sections = db.sections.filter((item) => item.tuneId === tuneId);
+  const issues = db.issues.filter((item) => item.tuneId === tuneId);
 
   const checkedSections = sections.filter((s) => s.checked);
   const uncheckedSections = sections.filter((s) => !s.checked);
@@ -818,6 +812,14 @@ async function handle(req, res) {
       note: body.note || ""
     };
     db.sections.push(section);
+
+    if (tune.currentEditionId) {
+      const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
+      if (edition) {
+        edition.sectionsSnapshot.push({ ...section });
+      }
+    }
+
     await writeDb(db);
     return send(res, 201, { data: section });
   }
@@ -988,6 +990,18 @@ async function handle(req, res) {
     const body = await parseBody(req);
     section.checked = body.checked !== undefined ? Boolean(body.checked) : true;
     section.note = body.note ?? section.note;
+
+    if (tune.currentEditionId) {
+      const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
+      if (edition) {
+        const snapSection = edition.sectionsSnapshot.find((s) => s.id === section.id);
+        if (snapSection) {
+          snapSection.checked = section.checked;
+          snapSection.note = section.note;
+        }
+      }
+    }
+
     await writeDb(db);
     return send(res, 200, { data: section });
   }
@@ -1498,6 +1512,16 @@ async function handle(req, res) {
         section.checked = true;
         if (body.sectionNote !== undefined) {
           section.note = body.sectionNote;
+        }
+        if (tune.currentEditionId) {
+          const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
+          if (edition) {
+            const snapSection = edition.sectionsSnapshot.find((s) => s.id === section.id);
+            if (snapSection) {
+              snapSection.checked = section.checked;
+              snapSection.note = section.note;
+            }
+          }
         }
       }
     }

@@ -16,6 +16,23 @@
       "createdAt": "2026-06-17T02:14:13.815Z",
       "archived": false,
       "archivedAt": null
+    },
+    {
+      "id": "tune_mqhkbh9p_84nmty",
+      "title": "秋日华尔兹",
+      "composer": "李明",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 82,
+        "paperType": "半透明纸带"
+      },
+      "templateId": "tpl_20_semitrans",
+      "templateNameSnapshot": "20音半透明纸带",
+      "currentEditionId": "edition_mqhkbh9p_un837u",
+      "archived": false,
+      "archivedAt": null,
+      "createdAt": "2026-06-17T04:20:03.757Z"
     }
   ],
   "tapeEditions": [
@@ -48,6 +65,45 @@
       ],
       "isCurrent": true,
       "createdAt": "2026-06-17T02:14:13.816Z"
+    },
+    {
+      "id": "edition_mqhkbh9p_un837u",
+      "tuneId": "tune_mqhkbh9p_84nmty",
+      "version": 1,
+      "source": "initial",
+      "sourceEditionId": null,
+      "description": "初始版次",
+      "sectionsSnapshot": [
+        {
+          "id": "section_mqhkbhcl_uvos16",
+          "tuneId": "tune_mqhkbh9p_84nmty",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "引子段已校对"
+        },
+        {
+          "id": "section_mqhkbhct_gnakam",
+          "tuneId": "tune_mqhkbh9p_84nmty",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "主歌段待校对"
+        },
+        {
+          "id": "section_mqhkbhfm_c7bz6j",
+          "tuneId": "tune_mqhkbh9p_84nmty",
+          "startBeat": 65,
+          "endBeat": 96,
+          "laneRange": "2-16",
+          "checked": false,
+          "note": "副歌段待校对"
+        }
+      ],
+      "isCurrent": true,
+      "createdAt": "2026-06-17T04:20:03.757Z"
     }
   ],
   "sections": [
@@ -68,6 +124,33 @@
       "laneRange": "4-18",
       "checked": false,
       "note": "副歌段等待校对"
+    },
+    {
+      "id": "section_mqhkbhcl_uvos16",
+      "tuneId": "tune_mqhkbh9p_84nmty",
+      "startBeat": 1,
+      "endBeat": 32,
+      "laneRange": "1-10",
+      "checked": true,
+      "note": "引子段已校对"
+    },
+    {
+      "id": "section_mqhkbhct_gnakam",
+      "tuneId": "tune_mqhkbh9p_84nmty",
+      "startBeat": 33,
+      "endBeat": 64,
+      "laneRange": "4-18",
+      "checked": false,
+      "note": "主歌段待校对"
+    },
+    {
+      "id": "section_mqhkbhfm_c7bz6j",
+      "tuneId": "tune_mqhkbh9p_84nmty",
+      "startBeat": 65,
+      "endBeat": 96,
+      "laneRange": "2-16",
+      "checked": false,
+      "note": "副歌段待校对"
     }
   ],
   "issues": [
@@ -86,6 +169,54 @@
       "fixTime": null,
       "reviewNote": null,
       "editionId": "edition_demo_init"
+    },
+    {
+      "id": "issue_mqhkbhi9_g30wfw",
+      "tuneId": "tune_mqhkbh9p_84nmty",
+      "editionId": "edition_mqhkbh9p_un837u",
+      "sectionId": "section_mqhkbhct_gnakam",
+      "type": "漏孔",
+      "beat": 41,
+      "lane": 12,
+      "description": "第41拍高音孔漏打",
+      "status": "verified",
+      "createdAt": "2026-06-17T04:20:04.065Z",
+      "resolvedAt": "2026-06-17T04:20:04.346Z",
+      "fixDescription": "已重新打孔第41拍第12轨高音孔",
+      "fixTime": "2026-06-17T04:20:04.336Z",
+      "reviewNote": "试奏确认高音已正确发声"
+    },
+    {
+      "id": "issue_mqhkbhko_phwf8h",
+      "tuneId": "tune_mqhkbh9p_84nmty",
+      "editionId": "edition_mqhkbh9p_un837u",
+      "sectionId": "section_mqhkbhct_gnakam",
+      "type": "错孔",
+      "beat": 50,
+      "lane": 8,
+      "description": "第50拍第8轨孔位偏移",
+      "status": "fixed",
+      "createdAt": "2026-06-17T04:20:04.152Z",
+      "resolvedAt": null,
+      "fixDescription": "已调整第50拍第8轨孔位",
+      "fixTime": "2026-06-17T04:20:05.324Z",
+      "reviewNote": null
+    },
+    {
+      "id": "issue_mqhkbhn4_nrisfe",
+      "tuneId": "tune_mqhkbh9p_84nmty",
+      "editionId": "edition_mqhkbh9p_un837u",
+      "sectionId": "section_mqhkbhfm_c7bz6j",
+      "type": "偏孔",
+      "beat": 72,
+      "lane": 5,
+      "description": "第72拍第5轨孔偏右1mm",
+      "status": "verified",
+      "createdAt": "2026-06-17T04:20:04.240Z",
+      "resolvedAt": "2026-06-17T04:20:05.850Z",
+      "fixDescription": "已修正第72拍第5轨孔位",
+      "fixTime": "2026-06-17T04:20:05.843Z",
+      "reviewNote": "试奏确认音高正确"
     }
   ],
   "playSessions": [],
@@ -172,73 +303,200 @@
   ],
   "reportSnapshots": [
     {
-      "id": "report_mqhip8bw_amvpig",
-      "tuneId": "tune_demo",
-      "label": "初始检查点",
+      "id": "report_mqhkbi4p_snb5v1",
+      "tuneId": "tune_mqhkbh9p_84nmty",
+      "label": "修复漏孔后第一次检查点",
       "report": {
-        "tuneId": "tune_demo",
-        "tuneTitle": "雨后圆舞曲",
-        "composer": "匿名",
+        "tuneId": "tune_mqhkbh9p_84nmty",
+        "tuneTitle": "秋日华尔兹",
+        "composer": "李明",
         "stripSpec": {
           "widthMm": 70,
           "scale": "20音",
           "tempoBpm": 82,
           "paperType": "半透明纸带"
         },
-        "editionId": "edition_demo_init",
+        "editionId": "edition_mqhkbh9p_un837u",
         "editionVersion": 1,
         "coverage": {
-          "totalSections": 2,
+          "totalSections": 3,
           "checkedSections": 1,
-          "uncheckedSections": 1,
-          "coveragePercent": 50
+          "uncheckedSections": 2,
+          "coveragePercent": 33
         },
         "uncheckedSectionDetails": [
           {
-            "id": "section_demo_2",
+            "id": "section_mqhkbhct_gnakam",
             "startBeat": 33,
             "endBeat": 64,
             "laneRange": "4-18",
-            "note": "副歌段等待校对"
+            "note": "主歌段待校对"
+          },
+          {
+            "id": "section_mqhkbhfm_c7bz6j",
+            "startBeat": 65,
+            "endBeat": 96,
+            "laneRange": "2-16",
+            "note": "副歌段待校对"
           }
         ],
         "openIssueDetails": [
           {
-            "id": "issue_demo",
-            "type": "漏孔",
-            "sectionId": "section_demo_2",
-            "beat": 41,
-            "lane": 12,
-            "description": "第41拍高音孔漏打",
+            "id": "issue_mqhkbhko_phwf8h",
+            "type": "错孔",
+            "sectionId": "section_mqhkbhct_gnakam",
+            "beat": 50,
+            "lane": 8,
+            "description": "第50拍第8轨孔位偏移",
             "status": "open",
-            "createdAt": "2026-06-17T02:14:13.816Z"
+            "createdAt": "2026-06-17T04:20:04.152Z"
+          },
+          {
+            "id": "issue_mqhkbhn4_nrisfe",
+            "type": "偏孔",
+            "sectionId": "section_mqhkbhfm_c7bz6j",
+            "beat": 72,
+            "lane": 5,
+            "description": "第72拍第5轨孔偏右1mm",
+            "status": "open",
+            "createdAt": "2026-06-17T04:20:04.240Z"
           }
         ],
         "issueCountByType": {
-          "漏孔": 1
+          "漏孔": 1,
+          "错孔": 1,
+          "偏孔": 1
         },
         "summary": {
-          "totalIssues": 1,
-          "openIssues": 1,
-          "closedIssues": 0
+          "totalIssues": 3,
+          "openIssues": 2,
+          "closedIssues": 1
         },
         "suggestedNextSteps": [
           {
-            "action": "punch_task",
-            "priority": "high",
-            "sectionId": "section_demo_2",
+            "action": "check_section",
+            "priority": "medium",
+            "sectionId": "section_mqhkbhct_gnakam",
             "section": {
               "startBeat": 33,
               "endBeat": 64,
               "laneRange": "4-18"
             },
-            "taskId": "task_demo_1",
-            "note": "该区间有高优先级打孔任务"
+            "note": "区间尚未检查"
+          },
+          {
+            "action": "check_section",
+            "priority": "medium",
+            "sectionId": "section_mqhkbhfm_c7bz6j",
+            "section": {
+              "startBeat": 65,
+              "endBeat": 96,
+              "laneRange": "2-16"
+            },
+            "note": "区间尚未检查"
           }
         ],
-        "generatedAt": "2026-06-17T03:34:46.122Z"
+        "generatedAt": "2026-06-17T04:20:04.873Z"
       },
-      "createdAt": "2026-06-17T03:34:46.124Z"
+      "createdAt": "2026-06-17T04:20:04.873Z"
+    },
+    {
+      "id": "report_mqhkbijt_auv9kv",
+      "tuneId": "tune_mqhkbh9p_84nmty",
+      "label": "错孔修复后第二次检查点",
+      "report": {
+        "tuneId": "tune_mqhkbh9p_84nmty",
+        "tuneTitle": "秋日华尔兹",
+        "composer": "李明",
+        "stripSpec": {
+          "widthMm": 70,
+          "scale": "20音",
+          "tempoBpm": 82,
+          "paperType": "半透明纸带"
+        },
+        "editionId": "edition_mqhkbh9p_un837u",
+        "editionVersion": 1,
+        "coverage": {
+          "totalSections": 3,
+          "checkedSections": 1,
+          "uncheckedSections": 2,
+          "coveragePercent": 33
+        },
+        "uncheckedSectionDetails": [
+          {
+            "id": "section_mqhkbhct_gnakam",
+            "startBeat": 33,
+            "endBeat": 64,
+            "laneRange": "4-18",
+            "note": "主歌段待校对"
+          },
+          {
+            "id": "section_mqhkbhfm_c7bz6j",
+            "startBeat": 65,
+            "endBeat": 96,
+            "laneRange": "2-16",
+            "note": "副歌段待校对"
+          }
+        ],
+        "openIssueDetails": [
+          {
+            "id": "issue_mqhkbhko_phwf8h",
+            "type": "错孔",
+            "sectionId": "section_mqhkbhct_gnakam",
+            "beat": 50,
+            "lane": 8,
+            "description": "第50拍第8轨孔位偏移",
+            "status": "fixed",
+            "createdAt": "2026-06-17T04:20:04.152Z"
+          },
+          {
+            "id": "issue_mqhkbhn4_nrisfe",
+            "type": "偏孔",
+            "sectionId": "section_mqhkbhfm_c7bz6j",
+            "beat": 72,
+            "lane": 5,
+            "description": "第72拍第5轨孔偏右1mm",
+            "status": "open",
+            "createdAt": "2026-06-17T04:20:04.240Z"
+          }
+        ],
+        "issueCountByType": {
+          "漏孔": 1,
+          "错孔": 1,
+          "偏孔": 1
+        },
+        "summary": {
+          "totalIssues": 3,
+          "openIssues": 2,
+          "closedIssues": 1
+        },
+        "suggestedNextSteps": [
+          {
+            "action": "check_section",
+            "priority": "medium",
+            "sectionId": "section_mqhkbhct_gnakam",
+            "section": {
+              "startBeat": 33,
+              "endBeat": 64,
+              "laneRange": "4-18"
+            },
+            "note": "区间尚未检查"
+          },
+          {
+            "action": "check_section",
+            "priority": "medium",
+            "sectionId": "section_mqhkbhfm_c7bz6j",
+            "section": {
+              "startBeat": 65,
+              "endBeat": 96,
+              "laneRange": "2-16"
+            },
+            "note": "区间尚未检查"
+          }
+        ],
+        "generatedAt": "2026-06-17T04:20:05.417Z"
+      },
+      "createdAt": "2026-06-17T04:20:05.417Z"
     }
   ]
 }
