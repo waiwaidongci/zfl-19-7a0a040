@@ -397,6 +397,18 @@ function resolveEditionId(db, tuneId, editionId) {
   return tune.currentEditionId || null;
 }
 
+function resolveTuneEdition(db, tuneId, editionId) {
+  const resolvedEditionId = resolveEditionId(db, tuneId, editionId);
+  if (!resolvedEditionId) return null;
+  const edition = findEdition(db, resolvedEditionId);
+  if (edition.tuneId !== tuneId) {
+    const error = new Error("版次不属于该曲目");
+    error.status = 400;
+    throw error;
+  }
+  return edition;
+}
+
 function validatePriority(priority) {
   const valid = ["low", "medium", "high", "urgent"];
   if (!valid.includes(priority)) {
@@ -432,8 +444,15 @@ function validateStripSpec(spec) {
 
 function buildProgress(db, tuneId) {
   findTune(db, tuneId);
-  const sections = db.sections.filter((item) => item.tuneId === tuneId);
-  const issues = db.issues.filter((item) => item.tuneId === tuneId);
+  const edition = resolveTuneEdition(db, tuneId, null);
+  const sections = edition
+    ? edition.sectionsSnapshot
+    : db.sections.filter((item) => item.tuneId === tuneId);
+  const issues = db.issues.filter(
+    (item) =>
+      item.tuneId === tuneId &&
+      (!edition || item.editionId === edition.id)
+  );
   const sessions = db.playSessions.filter((item) => item.tuneId === tuneId);
   const checkedCount = sections.filter((item) => item.checked).length;
   const openIssues = issues.filter((item) => item.status !== "resolved").length;
@@ -527,13 +546,9 @@ async function handle(req, res) {
   const tuneSectionsMatch = pathname.match(/^\/tunes\/([^/]+)\/sections$/);
   if (tuneSectionsMatch && req.method === "GET") {
     const tuneId = tuneSectionsMatch[1];
-    findTune(db, tuneId);
     const editionId = searchParams.get("editionId");
-    if (editionId) {
-      const edition = findEdition(db, editionId);
-      if (edition.tuneId !== tuneId) {
-        return send(res, 400, { error: "版次不属于该曲目" });
-      }
+    const edition = resolveTuneEdition(db, tuneId, editionId);
+    if (edition) {
       return send(res, 200, { data: edition.sectionsSnapshot });
     }
     return send(res, 200, { data: db.sections.filter((item) => item.tuneId === tuneId) });
@@ -561,13 +576,9 @@ async function handle(req, res) {
   const uncheckedMatch = pathname.match(/^\/tunes\/([^/]+)\/unchecked-sections$/);
   if (uncheckedMatch && req.method === "GET") {
     const tuneId = uncheckedMatch[1];
-    findTune(db, tuneId);
     const editionId = searchParams.get("editionId");
-    if (editionId) {
-      const edition = findEdition(db, editionId);
-      if (edition.tuneId !== tuneId) {
-        return send(res, 400, { error: "版次不属于该曲目" });
-      }
+    const edition = resolveTuneEdition(db, tuneId, editionId);
+    if (edition) {
       return send(res, 200, { data: edition.sectionsSnapshot.filter((s) => !s.checked) });
     }
     return send(res, 200, { data: db.sections.filter((item) => item.tuneId === tuneId && !item.checked) });
@@ -593,10 +604,12 @@ async function handle(req, res) {
     const tuneId = searchParams.get("tuneId");
     const status = searchParams.get("status");
     const editionId = searchParams.get("editionId");
+    const edition = tuneId ? resolveTuneEdition(db, tuneId, editionId) : null;
     const issues = db.issues.filter((item) => {
       if (tuneId && item.tuneId !== tuneId) return false;
       if (status && item.status !== status) return false;
       if (editionId && item.editionId !== editionId) return false;
+      if (!editionId && edition && item.editionId !== edition.id) return false;
       return true;
     });
     return send(res, 200, { data: issues });

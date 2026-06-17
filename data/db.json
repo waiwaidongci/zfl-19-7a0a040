@@ -79,7 +79,8 @@
       "description": "第41拍高音孔漏打",
       "status": "open",
       "createdAt": "2026-06-16T16:50:29.391Z",
-      "resolvedAt": null
+      "resolvedAt": null,
+      "editionId": "edition_demo_init"
     }
   ],
   "playSessions": [],
