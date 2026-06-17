@@ -7,7 +7,7 @@ const DB_FILE = path.join(__dirname, "data", "db.json");
 const BACKUP_DIR = path.join(__dirname, "data", "backups");
 const MIGRATION_LOG_FILE = path.join(__dirname, "data", "migration-log.json");
 
-const CURRENT_DATA_VERSION = 6;
+const CURRENT_DATA_VERSION = 7;
 const URGENT_HOURS_THRESHOLD = 24;
 
 const VALID_ISSUE_STATUSES = ["open", "fixed", "verified", "reopened"];
@@ -124,6 +124,7 @@ const initialData = {
       id: "task_demo_1",
       tuneId: "tune_demo",
       sectionId: "section_demo_2",
+      editionId: "edition_demo_init",
       priority: "high",
       assignee: null,
       status: "pending",
@@ -851,13 +852,37 @@ function migrate_v5_to_v6(data, report) {
   return changes.length > 0;
 }
 
+function migrate_v6_to_v7(data, report) {
+  const changes = [];
+  const tunesById = {};
+  for (const tune of data.tunes || []) {
+    tunesById[tune.id] = tune;
+  }
+  let migratedCount = 0;
+  for (const task of data.punchTasks || []) {
+    if (task.editionId === undefined) {
+      const tune = tunesById[task.tuneId];
+      task.editionId = (tune && tune.currentEditionId) || null;
+      migratedCount++;
+    }
+  }
+  if (migratedCount > 0) {
+    changes.push(`added editionId to ${migratedCount} punch tasks`);
+  }
+
+  data._dataVersion = 7;
+  report.steps.push({ version: 7, changes });
+  return changes.length > 0;
+}
+
 const MIGRATIONS = [
   { from: 0, to: 1, run: migrate_v0_to_v1 },
   { from: 1, to: 2, run: migrate_v1_to_v2 },
   { from: 2, to: 3, run: migrate_v2_to_v3 },
   { from: 3, to: 4, run: migrate_v3_to_v4 },
   { from: 4, to: 5, run: migrate_v4_to_v5 },
-  { from: 5, to: 6, run: migrate_v5_to_v6 }
+  { from: 5, to: 6, run: migrate_v5_to_v6 },
+  { from: 6, to: 7, run: migrate_v6_to_v7 }
 ];
 
 async function runMigrations() {
@@ -2033,7 +2058,11 @@ function buildProgress(db, tuneId) {
       (!edition || item.editionId === edition.id)
   );
   const sessions = db.playSessions.filter((item) => item.tuneId === tuneId);
-  const punchTasks = db.punchTasks.filter((item) => item.tuneId === tuneId);
+  const punchTasks = db.punchTasks.filter(
+    (item) =>
+      item.tuneId === tuneId &&
+      (!edition || item.editionId === edition.id)
+  );
   const now = new Date();
 
   const checkedCount = sections.filter((item) => item.checked).length;
@@ -2115,7 +2144,7 @@ function buildReport(db, tuneId) {
 
   const nextSteps = [];
   const pendingPunchTasks = db.punchTasks.filter(
-    (t) => t.tuneId === tuneId && t.status !== "completed"
+    (t) => t.tuneId === tuneId && t.status !== "completed" && (!edition || t.editionId === edition.id)
   );
   const sortedPendingTasks = sortPunchTasks(pendingPunchTasks, now);
 
@@ -3394,6 +3423,7 @@ async function handle(req, res) {
 
   if (req.method === "GET" && pathname === "/punch-tasks") {
     const tuneId = searchParams.get("tuneId");
+    const editionIdParam = searchParams.get("editionId");
     const status = searchParams.get("status");
     const priority = searchParams.get("priority");
     const assignee = searchParams.get("assignee");
@@ -3404,9 +3434,18 @@ async function handle(req, res) {
     if (status) validateTaskStatus(status);
     if (priority) validatePriority(priority);
 
+    let resolvedEditionId = editionIdParam || null;
+    if (!editionIdParam && tuneId) {
+      const tune = db.tunes.find((t) => t.id === tuneId);
+      if (tune && tune.currentEditionId) {
+        resolvedEditionId = tune.currentEditionId;
+      }
+    }
+
     const now = new Date();
     let tasks = db.punchTasks.filter((item) => {
       if (tuneId && item.tuneId !== tuneId) return false;
+      if (resolvedEditionId && item.editionId !== resolvedEditionId) return false;
       if (status && item.status !== status) return false;
       if (priority && item.priority !== priority) return false;
       if (assignee && item.assignee !== assignee) return false;
@@ -3421,11 +3460,14 @@ async function handle(req, res) {
     const enriched = tasks.map((task) => {
       const tune = db.tunes.find((t) => t.id === task.tuneId);
       const section = db.sections.find((s) => s.id === task.sectionId);
+      const taskEdition = task.editionId ? db.tapeEditions.find((e) => e.id === task.editionId) : null;
       return {
         ...task,
         overdue: isTaskOverdue(task, now),
         isUrgent: isTaskUrgent(task, now),
         hoursUntilDue: getHoursUntilDue(task, now),
+        editionVersion: taskEdition ? taskEdition.version : null,
+        isCurrentEdition: tune ? task.editionId === tune.currentEditionId : null,
         tuneTitle: tune ? tune.title : null,
         section: section
           ? {
@@ -3439,7 +3481,7 @@ async function handle(req, res) {
       };
     });
 
-    return send(res, 200, { data: enriched });
+    return send(res, 200, { data: enriched, filteredByEditionId: resolvedEditionId });
   }
 
   if (req.method === "POST" && pathname === "/punch-tasks/generate") {
@@ -3449,62 +3491,69 @@ async function handle(req, res) {
     validatePriority(defaultPriority);
     const defaultDueAt = validateDueAt(body.defaultDueAt);
 
+    const tunesToProcess = tuneId ? [findTune(db, tuneId)] : db.tunes.filter((t) => !t.archived);
     if (tuneId) {
-      const tune = findTune(db, tuneId);
-      ensureTuneNotArchived(tune);
-    }
-
-    const uncheckedSections = db.sections.filter((s) => {
-      if (tuneId && s.tuneId !== tuneId) return false;
-      if (s.checked) return false;
-      const tune = db.tunes.find((t) => t.id === s.tuneId);
-      if (tune && tune.archived) return false;
-      return true;
-    });
-
-    if (uncheckedSections.length === 0) {
-      return send(res, 200, { data: [], message: "没有未检查的区间需要生成任务" });
+      ensureTuneNotArchived(tunesToProcess[0]);
     }
 
     const createdTasks = [];
+    const skippedSections = [];
     const now = new Date();
-    for (const section of uncheckedSections) {
-      const existingTask = db.punchTasks.find(
-        (t) => t.sectionId === section.id && t.status !== "completed"
-      );
-      if (existingTask) continue;
 
-      const task = {
-        id: makeId("task"),
-        tuneId: section.tuneId,
-        sectionId: section.id,
-        priority: defaultPriority,
-        assignee: null,
-        status: "pending",
-        createdAt: now.toISOString(),
-        claimedAt: null,
-        completedAt: null,
-        note: section.note || `区间 ${section.startBeat}-${section.endBeat} 待打孔`,
-        originalAssignee: null,
-        transferHistory: [],
-        lastTransferredAt: null,
-        lastTransferNote: null,
-        dueAt: defaultDueAt
-      };
-      db.punchTasks.push(task);
-      createdTasks.push({
-        ...task,
-        overdue: isTaskOverdue(task, now),
-        isUrgent: isTaskUrgent(task, now),
-        hoursUntilDue: getHoursUntilDue(task, now)
-      });
+    for (const tune of tunesToProcess) {
+      const edition = tune.currentEditionId ? findEdition(db, tune.currentEditionId) : null;
+      const editionId = edition ? edition.id : null;
+      const editionSections = edition ? edition.sectionsSnapshot : db.sections.filter((s) => s.tuneId === tune.id);
+
+      const uncheckedSections = editionSections.filter((s) => !s.checked);
+
+      for (const section of uncheckedSections) {
+        const existingTask = db.punchTasks.find(
+          (t) => t.sectionId === section.id && t.status !== "completed" && t.editionId === editionId
+        );
+        if (existingTask) {
+          skippedSections.push({ sectionId: section.id, reason: "same_edition_task_exists" });
+          continue;
+        }
+
+        const task = {
+          id: makeId("task"),
+          tuneId: tune.id,
+          sectionId: section.id,
+          editionId,
+          priority: defaultPriority,
+          assignee: null,
+          status: "pending",
+          createdAt: now.toISOString(),
+          claimedAt: null,
+          completedAt: null,
+          note: section.note || `区间 ${section.startBeat}-${section.endBeat} 待打孔`,
+          originalAssignee: null,
+          transferHistory: [],
+          lastTransferredAt: null,
+          lastTransferNote: null,
+          dueAt: defaultDueAt
+        };
+        db.punchTasks.push(task);
+        createdTasks.push({
+          ...task,
+          overdue: isTaskOverdue(task, now),
+          isUrgent: isTaskUrgent(task, now),
+          hoursUntilDue: getHoursUntilDue(task, now)
+        });
+      }
+    }
+
+    if (createdTasks.length === 0) {
+      return send(res, 200, { data: [], message: "没有未检查的区间需要生成任务", skippedSections });
     }
 
     await writeDb(db);
     return send(res, 201, {
       data: createdTasks,
       totalCreated: createdTasks.length,
-      totalSkipped: uncheckedSections.length - createdTasks.length
+      totalSkipped: skippedSections.length,
+      skippedSections
     });
   }
 
@@ -3518,21 +3567,32 @@ async function handle(req, res) {
       return send(res, 400, { error: "区间不属于该曲目" });
     }
 
+    const edition = tune.currentEditionId ? findEdition(db, tune.currentEditionId) : null;
+    const editionId = edition ? edition.id : null;
+
+    if (edition) {
+      const sectionInEdition = edition.sectionsSnapshot.find((s) => s.id === body.sectionId);
+      if (!sectionInEdition) {
+        return send(res, 400, { error: "区间不存在于当前版次中，无法创建任务" });
+      }
+    }
+
     const priority = body.priority || "medium";
     validatePriority(priority);
     const dueAt = validateDueAt(body.dueAt);
 
     const existingTask = db.punchTasks.find(
-      (t) => t.sectionId === body.sectionId && t.status !== "completed"
+      (t) => t.sectionId === body.sectionId && t.status !== "completed" && t.editionId === editionId
     );
     if (existingTask) {
-      return send(res, 409, { error: "该区间已有进行中的打孔任务", data: existingTask });
+      return send(res, 409, { error: "该区间在当前版次下已有进行中的打孔任务", data: existingTask });
     }
 
     const task = {
       id: makeId("task"),
       tuneId: body.tuneId,
       sectionId: body.sectionId,
+      editionId,
       priority,
       assignee: null,
       status: "pending",
@@ -3567,8 +3627,22 @@ async function handle(req, res) {
     if (task.status !== "pending") {
       return send(res, 400, { error: `当前任务状态为 ${task.status}，无法领取` });
     }
+
     const body = await parseBody(req);
     required(body, ["assignee"]);
+
+    if (task.editionId && task.editionId !== tune.currentEditionId) {
+      if (!body.force) {
+        const taskEdition = findEdition(db, task.editionId);
+        return send(res, 409, {
+          error: "该任务属于其他版次，当前版次已切换",
+          taskEditionId: task.editionId,
+          taskEditionVersion: taskEdition ? taskEdition.version : null,
+          currentEditionId: tune.currentEditionId,
+          hint: "如需领取其他版次任务，请传入 force: true"
+        });
+      }
+    }
 
     if (body.dueAt !== undefined) {
       task.dueAt = validateDueAt(body.dueAt);
@@ -3604,6 +3678,19 @@ async function handle(req, res) {
       return send(res, 400, { error: "任务尚未领取，请先领取任务" });
     }
     const body = await parseBody(req);
+
+    if (task.editionId && task.editionId !== tune.currentEditionId) {
+      if (!body.force) {
+        const taskEdition = findEdition(db, task.editionId);
+        return send(res, 409, {
+          error: "该任务属于其他版次，当前版次已切换，无法误完成另一版次的任务",
+          taskEditionId: task.editionId,
+          taskEditionVersion: taskEdition ? taskEdition.version : null,
+          currentEditionId: tune.currentEditionId,
+          hint: "如需完成其他版次任务，请传入 force: true"
+        });
+      }
+    }
 
     if (body.dueAt !== undefined) {
       task.dueAt = validateDueAt(body.dueAt);
