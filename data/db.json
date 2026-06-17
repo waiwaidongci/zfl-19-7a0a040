@@ -169,5 +169,76 @@
       "createdAt": "2026-06-17T02:14:13.816Z",
       "updatedAt": "2026-06-17T02:14:13.816Z"
     }
+  ],
+  "reportSnapshots": [
+    {
+      "id": "report_mqhip8bw_amvpig",
+      "tuneId": "tune_demo",
+      "label": "初始检查点",
+      "report": {
+        "tuneId": "tune_demo",
+        "tuneTitle": "雨后圆舞曲",
+        "composer": "匿名",
+        "stripSpec": {
+          "widthMm": 70,
+          "scale": "20音",
+          "tempoBpm": 82,
+          "paperType": "半透明纸带"
+        },
+        "editionId": "edition_demo_init",
+        "editionVersion": 1,
+        "coverage": {
+          "totalSections": 2,
+          "checkedSections": 1,
+          "uncheckedSections": 1,
+          "coveragePercent": 50
+        },
+        "uncheckedSectionDetails": [
+          {
+            "id": "section_demo_2",
+            "startBeat": 33,
+            "endBeat": 64,
+            "laneRange": "4-18",
+            "note": "副歌段等待校对"
+          }
+        ],
+        "openIssueDetails": [
+          {
+            "id": "issue_demo",
+            "type": "漏孔",
+            "sectionId": "section_demo_2",
+            "beat": 41,
+            "lane": 12,
+            "description": "第41拍高音孔漏打",
+            "status": "open",
+            "createdAt": "2026-06-17T02:14:13.816Z"
+          }
+        ],
+        "issueCountByType": {
+          "漏孔": 1
+        },
+        "summary": {
+          "totalIssues": 1,
+          "openIssues": 1,
+          "closedIssues": 0
+        },
+        "suggestedNextSteps": [
+          {
+            "action": "punch_task",
+            "priority": "high",
+            "sectionId": "section_demo_2",
+            "section": {
+              "startBeat": 33,
+              "endBeat": 64,
+              "laneRange": "4-18"
+            },
+            "taskId": "task_demo_1",
+            "note": "该区间有高优先级打孔任务"
+          }
+        ],
+        "generatedAt": "2026-06-17T03:34:46.122Z"
+      },
+      "createdAt": "2026-06-17T03:34:46.124Z"
+    }
   ]
 }

@@ -44,6 +44,24 @@ PORT=3019 node server.js
 
 **优先级**：`low`（低）、`medium`（中，默认）、`high`（高）、`urgent`（紧急）
 
+### 纸带校对报告
+- `GET /tunes/:id/report`（按当前实时数据生成校对报告，不持久化）
+- `POST /tunes/:id/report/snapshot`（将当前实时报告保存为历史快照，可选 `label` 标记）
+- `GET /tunes/:id/report/snapshots`（查询该曲目的所有报告快照列表，按创建时间倒序）
+- `GET /report-snapshots/:id`（查询指定报告快照的完整内容）
+
+**报告结构说明**：
+
+| 字段 | 说明 |
+|------|------|
+| `stripSpec` | 曲目纸带规格（宽度/音阶/速度/纸张类型） |
+| `coverage` | 区间检查覆盖率（总数/已检查/未检查/百分比） |
+| `uncheckedSectionDetails` | 未检查区间列表（含拍号范围和音轨范围） |
+| `openIssueDetails` | 未关闭问题列表（含类型/位置/描述/状态） |
+| `issueCountByType` | 按问题类型统计数量（如 `{"漏孔":2,"错孔":1}`） |
+| `summary` | 问题汇总（总数/未关闭/已关闭） |
+| `suggestedNextSteps` | 建议下一步处理顺序（按优先级排序，含动作类型和说明） |
+
 ## 纸带规格模板说明
 
 模板用于快速应用常用纸带规格。创建曲目时引用模板，`stripSpec` 会保存为**当时的快照**（`templateId` 和 `templateNameSnapshot`），后续对模板的修改**不会影响**已创建曲目。
@@ -335,4 +353,126 @@ fi
 # 查询所有未分配的高优先级任务
 echo "===== 未分配的高/紧急优先级任务 ====="
 curl "http://127.0.0.1:3019/punch-tasks?onlyUnassigned=true&priority=high"
+```
+
+## 纸带校对报告完整示例：从创建问题到生成报告快照
+
+```bash
+# 1. 创建一个新曲目
+NEW_TUNE=$(curl -s -X POST http://127.0.0.1:3019/tunes \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "秋日华尔兹",
+    "composer": "李明",
+    "templateId": "tpl_20_semitrans"
+  }')
+TUNE_ID=$(echo $NEW_TUNE | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+echo "曲目ID: $TUNE_ID"
+
+# 2. 为曲目添加纸带区间（部分已检查、部分未检查）
+curl -s -X POST http://127.0.0.1:3019/tunes/$TUNE_ID/sections \
+  -H 'Content-Type: application/json' \
+  -d '{"startBeat":1,"endBeat":32,"laneRange":"1-10","checked":true,"note":"引子段已校对"}' > /dev/null
+
+SECTION2=$(curl -s -X POST http://127.0.0.1:3019/tunes/$TUNE_ID/sections \
+  -H 'Content-Type: application/json' \
+  -d '{"startBeat":33,"endBeat":64,"laneRange":"4-18","checked":false,"note":"主歌段待校对"}')
+SECTION_ID2=$(echo $SECTION2 | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+SECTION3=$(curl -s -X POST http://127.0.0.1:3019/tunes/$TUNE_ID/sections \
+  -H 'Content-Type: application/json' \
+  -d '{"startBeat":65,"endBeat":96,"laneRange":"2-16","checked":false,"note":"副歌段待校对"}')
+SECTION_ID3=$(echo $SECTION3 | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# 3. 上报问题（漏孔）
+ISSUE1=$(curl -s -X POST http://127.0.0.1:3019/issues \
+  -H 'Content-Type: application/json' \
+  -d "{
+    \"tuneId\": \"$TUNE_ID\",
+    \"sectionId\": \"$SECTION_ID2\",
+    \"type\": \"漏孔\",
+    \"beat\": 41,
+    \"lane\": 12,
+    \"description\": \"第41拍高音孔漏打\"
+  }")
+ISSUE_ID1=$(echo $ISSUE1 | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# 4. 上报问题（错孔）
+ISSUE2=$(curl -s -X POST http://127.0.0.1:3019/issues \
+  -H 'Content-Type: application/json' \
+  -d "{
+    \"tuneId\": \"$TUNE_ID\",
+    \"sectionId\": \"$SECTION_ID2\",
+    \"type\": \"错孔\",
+    \"beat\": 50,
+    \"lane\": 8,
+    \"description\": \"第50拍第8轨孔位偏移\"
+  }")
+ISSUE_ID2=$(echo $ISSUE2 | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# 5. 上报问题（偏孔）
+ISSUE3=$(curl -s -X POST http://127.0.0.1:3019/issues \
+  -H 'Content-Type: application/json' \
+  -d "{
+    \"tuneId\": \"$TUNE_ID\",
+    \"sectionId\": \"$SECTION_ID3\",
+    \"type\": \"偏孔\",
+    \"beat\": 72,
+    \"lane\": 5,
+    \"description\": \"第72拍第5轨孔偏右1mm\"
+  }")
+ISSUE_ID3=$(echo $ISSUE3 | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# 6. 修复第一个问题并验证通过
+curl -s -X PATCH http://127.0.0.1:3019/issues/$ISSUE_ID1/status \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"fixed","fixDescription":"已重新打孔第41拍第12轨高音孔"}' > /dev/null
+curl -s -X PATCH http://127.0.0.1:3019/issues/$ISSUE_ID1/status \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"verified","reviewNote":"试奏确认高音已正确发声"}' > /dev/null
+
+# 7. 查看实时校对报告（不持久化，反映当前最新数据）
+echo "===== 实时校对报告 ====="
+curl -s http://127.0.0.1:3019/tunes/$TUNE_ID/report | python3 -m json.tool
+
+# 报告中应包含：
+# - stripSpec: 曲目纸带规格
+# - coverage: { totalSections: 3, checkedSections: 1, uncheckedSections: 2, coveragePercent: 33 }
+# - uncheckedSectionDetails: 2个未检查区间
+# - openIssueDetails: 2个未关闭问题（错孔+偏孔）
+# - issueCountByType: { "漏孔": 1, "错孔": 1, "偏孔": 1 }
+# - summary: { totalIssues: 3, openIssues: 2, closedIssues: 1 }
+# - suggestedNextSteps: 建议处理顺序
+
+# 8. 保存为历史快照（附带标签，方便后续检索）
+SNAPSHOT=$(curl -s -X POST http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshot \
+  -H 'Content-Type: application/json' \
+  -d "{\"label\": \"修复漏孔后第一次检查点\"}")
+SNAPSHOT_ID=$(echo $SNAPSHOT | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+echo "快照ID: $SNAPSHOT_ID"
+
+# 9. 查看该曲目的所有报告快照列表
+echo "===== 快照列表 ====="
+curl -s http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshots | python3 -m json.tool
+
+# 10. 查询指定快照的完整报告内容（历史快照数据不受后续修改影响）
+echo "===== 历史快照详情 ====="
+curl -s http://127.0.0.1:3019/report-snapshots/$SNAPSHOT_ID | python3 -m json.tool
+
+# 11. 继续修复剩余问题后，再次生成实时报告（数据已更新）
+curl -s -X PATCH http://127.0.0.1:3019/issues/$ISSUE_ID2/status \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"fixed","fixDescription":"已调整第50拍第8轨孔位"}' > /dev/null
+
+echo "===== 更新后的实时报告 ====="
+curl -s http://127.0.0.1:3019/tunes/$TUNE_ID/report | python3 -m json.tool
+
+# 12. 再次保存快照（可对比两次快照差异，追踪修复进度）
+curl -s -X POST http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshot \
+  -H 'Content-Type: application/json' \
+  -d '{"label": "错孔修复后第二次检查点"}'
+
+# 13. 查看所有快照，按时间倒序排列
+echo "===== 全部快照 ====="
+curl -s http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshots | python3 -m json.tool
 ```

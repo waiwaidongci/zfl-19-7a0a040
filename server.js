@@ -175,7 +175,8 @@ const initialData = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
-  ]
+  ],
+  reportSnapshots: []
 };
 
 const routes = [
@@ -196,6 +197,10 @@ const routes = [
   "POST /tunes/:id/play-sessions",
   "PATCH /tunes/:id/archive",
   "PATCH /tunes/:id/unarchive",
+  "GET /tunes/:id/report",
+  "POST /tunes/:id/report/snapshot",
+  "GET /tunes/:id/report/snapshots",
+  "GET /report-snapshots/:id",
   "PATCH /sections/:id/check",
   "GET /issues",
   "POST /issues",
@@ -230,6 +235,10 @@ async function ensureDb() {
     }
     if (!data.tapeEditions) {
       data.tapeEditions = [];
+      needWrite = true;
+    }
+    if (!data.reportSnapshots) {
+      data.reportSnapshots = [];
       needWrite = true;
     }
     for (const tune of data.tunes || []) {
@@ -562,6 +571,138 @@ function buildProgress(db, tuneId) {
     resolvedIssues,
     percent: sections.length ? Math.round((checkedCount / sections.length) * 100) : 0,
     lastPlayedAt
+  };
+}
+
+function buildReport(db, tuneId) {
+  const tune = findTune(db, tuneId);
+  const edition = resolveTuneEdition(db, tuneId, null);
+  const sections = edition
+    ? edition.sectionsSnapshot
+    : db.sections.filter((item) => item.tuneId === tuneId);
+  const issues = db.issues.filter(
+    (item) =>
+      item.tuneId === tuneId &&
+      (!edition || item.editionId === edition.id)
+  );
+
+  const checkedSections = sections.filter((s) => s.checked);
+  const uncheckedSections = sections.filter((s) => !s.checked);
+  const openIssues = issues.filter((i) => i.status !== "verified");
+  const closedIssues = issues.filter((i) => i.status === "verified");
+
+  const issueCountByType = {};
+  for (const issue of issues) {
+    issueCountByType[issue.type] = (issueCountByType[issue.type] || 0) + 1;
+  }
+
+  const uncheckedSectionDetails = uncheckedSections.map((s) => ({
+    id: s.id,
+    startBeat: s.startBeat,
+    endBeat: s.endBeat,
+    laneRange: s.laneRange,
+    note: s.note
+  }));
+
+  const openIssueDetails = openIssues.map((i) => ({
+    id: i.id,
+    type: i.type,
+    sectionId: i.sectionId,
+    beat: i.beat,
+    lane: i.lane,
+    description: i.description,
+    status: i.status,
+    createdAt: i.createdAt
+  }));
+
+  const nextSteps = [];
+  const pendingPunchTasks = db.punchTasks.filter(
+    (t) => t.tuneId === tuneId && t.status !== "completed"
+  );
+  const uncheckedWithUrgentTask = uncheckedSections.filter((s) =>
+    pendingPunchTasks.some(
+      (t) => t.sectionId === s.id && (t.priority === "urgent" || t.priority === "high")
+    )
+  );
+  for (const s of uncheckedWithUrgentTask) {
+    const task = pendingPunchTasks.find((t) => t.sectionId === s.id);
+    nextSteps.push({
+      action: "punch_task",
+      priority: task.priority,
+      sectionId: s.id,
+      section: { startBeat: s.startBeat, endBeat: s.endBeat, laneRange: s.laneRange },
+      taskId: task.id,
+      note: "该区间有高优先级打孔任务"
+    });
+  }
+  const remainingUnchecked = uncheckedSections.filter(
+    (s) => !uncheckedWithUrgentTask.some((u) => u.id === s.id)
+  );
+  for (const s of remainingUnchecked) {
+    nextSteps.push({
+      action: "check_section",
+      priority: "medium",
+      sectionId: s.id,
+      section: { startBeat: s.startBeat, endBeat: s.endBeat, laneRange: s.laneRange },
+      note: "区间尚未检查"
+    });
+  }
+  const openIssuesBySection = {};
+  for (const issue of openIssues) {
+    if (!openIssuesBySection[issue.sectionId]) {
+      openIssuesBySection[issue.sectionId] = [];
+    }
+    openIssuesBySection[issue.sectionId].push(issue);
+  }
+  const sectionsWithOpenIssues = Object.keys(openIssuesBySection).filter(
+    (sid) => !uncheckedWithUrgentTask.some((u) => u.id === sid) &&
+      !remainingUnchecked.some((u) => u.id === sid)
+  );
+  for (const sid of sectionsWithOpenIssues) {
+    const section = sections.find((s) => s.id === sid);
+    const sectionIssues = openIssuesBySection[sid];
+    nextSteps.push({
+      action: "fix_issues",
+      priority: "high",
+      sectionId: sid,
+      section: section
+        ? { startBeat: section.startBeat, endBeat: section.endBeat, laneRange: section.laneRange }
+        : null,
+      issueCount: sectionIssues.length,
+      issueTypes: [...new Set(sectionIssues.map((i) => i.type))],
+      note: `该区间有 ${sectionIssues.length} 个未关闭问题`
+    });
+  }
+  nextSteps.sort((a, b) => {
+    const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+    return priorityOrder[a.priority] - priorityOrder[b.priority];
+  });
+
+  return {
+    tuneId: tune.id,
+    tuneTitle: tune.title,
+    composer: tune.composer,
+    stripSpec: tune.stripSpec,
+    editionId: edition ? edition.id : null,
+    editionVersion: edition ? edition.version : null,
+    coverage: {
+      totalSections: sections.length,
+      checkedSections: checkedSections.length,
+      uncheckedSections: uncheckedSections.length,
+      coveragePercent: sections.length
+        ? Math.round((checkedSections.length / sections.length) * 100)
+        : 0
+    },
+    uncheckedSectionDetails,
+    openIssueDetails,
+    issueCountByType,
+    summary: {
+      totalIssues: issues.length,
+      openIssues: openIssues.length,
+      closedIssues: closedIssues.length
+    },
+    suggestedNextSteps: nextSteps,
+    generatedAt: new Date().toISOString()
   };
 }
 
@@ -1366,6 +1507,55 @@ async function handle(req, res) {
       data: task,
       sectionChecked: body.checkSection === true
     });
+  }
+
+  const reportMatch = pathname.match(/^\/tunes\/([^/]+)\/report$/);
+  if (reportMatch && req.method === "GET") {
+    const tuneId = reportMatch[1];
+    const report = buildReport(db, tuneId);
+    return send(res, 200, { data: report });
+  }
+
+  const reportSnapshotMatch = pathname.match(/^\/tunes\/([^/]+)\/report\/snapshot$/);
+  if (reportSnapshotMatch && req.method === "POST") {
+    const tuneId = reportSnapshotMatch[1];
+    findTune(db, tuneId);
+    const report = buildReport(db, tuneId);
+    const body = await parseBody(req);
+    const snapshot = {
+      id: makeId("report"),
+      tuneId,
+      label: body.label || "",
+      report,
+      createdAt: new Date().toISOString()
+    };
+    db.reportSnapshots.push(snapshot);
+    await writeDb(db);
+    return send(res, 201, { data: snapshot });
+  }
+
+  const reportSnapshotsListMatch = pathname.match(/^\/tunes\/([^/]+)\/report\/snapshots$/);
+  if (reportSnapshotsListMatch && req.method === "GET") {
+    const tuneId = reportSnapshotsListMatch[1];
+    findTune(db, tuneId);
+    const snapshots = db.reportSnapshots
+      .filter((s) => s.tuneId === tuneId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((s) => ({
+        id: s.id,
+        tuneId: s.tuneId,
+        label: s.label,
+        createdAt: s.createdAt
+      }));
+    return send(res, 200, { data: snapshots });
+  }
+
+  const snapshotDetailMatch = pathname.match(/^\/report-snapshots\/([^/]+)$/);
+  if (snapshotDetailMatch && req.method === "GET") {
+    const snapshotId = snapshotDetailMatch[1];
+    const snapshot = db.reportSnapshots.find((s) => s.id === snapshotId);
+    if (!snapshot) return send(res, 404, { error: "报告快照不存在" });
+    return send(res, 200, { data: snapshot });
   }
 
   return send(res, 404, { error: "接口不存在", routes });
