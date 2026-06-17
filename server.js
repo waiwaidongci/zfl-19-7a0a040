@@ -1634,7 +1634,6 @@ function buildReport(db, tuneId) {
 
 async function handle(req, res) {
   const { pathname, searchParams } = parseUrl(req);
-  const db = await readDb();
 
   if (req.method === "GET" && pathname === "/health") {
     return send(res, 200, {
@@ -1658,6 +1657,8 @@ async function handle(req, res) {
   if (req.method === "GET" && pathname === "/migrations") {
     return send(res, 200, { data: getMigrationReport() });
   }
+
+  const db = await readDb();
 
   if (req.method === "GET" && pathname === "/tunes") {
     const archivedFilter = searchParams.get("archived");
