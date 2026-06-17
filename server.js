@@ -2860,6 +2860,9 @@ async function handle(req, res) {
     }
     const body = await parseBody(req);
 
+    if (body.dueAt !== undefined) {
+      task.dueAt = validateDueAt(body.dueAt);
+    }
     task.status = "completed";
     task.completedAt = new Date().toISOString();
     task.note = body.note ?? task.note;
