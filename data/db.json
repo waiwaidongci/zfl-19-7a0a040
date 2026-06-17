@@ -33,6 +33,40 @@
       "archived": false,
       "archivedAt": null,
       "createdAt": "2026-06-17T04:20:03.757Z"
+    },
+    {
+      "id": "tune_mqi13wa9_aqdi5r",
+      "title": "对比测试",
+      "composer": "",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 80,
+        "paperType": "普通纸带"
+      },
+      "templateId": "tpl_20_standard",
+      "templateNameSnapshot": "20音标准纸带",
+      "currentEditionId": "edition_mqi13wan_w61f7q",
+      "archived": false,
+      "archivedAt": null,
+      "createdAt": "2026-06-17T12:10:03.441Z"
+    },
+    {
+      "id": "tune_mqi18o6p_gi969k",
+      "title": "对比测试",
+      "composer": "",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 80,
+        "paperType": "普通纸带"
+      },
+      "templateId": "tpl_20_standard",
+      "templateNameSnapshot": "20音标准纸带",
+      "currentEditionId": "edition_mqi18o72_bqxnh8",
+      "archived": false,
+      "archivedAt": null,
+      "createdAt": "2026-06-17T12:13:46.225Z"
     }
   ],
   "tapeEditions": [
@@ -131,6 +165,212 @@
       ],
       "isCurrent": true,
       "createdAt": "2026-06-17T04:20:03.757Z"
+    },
+    {
+      "id": "edition_mqi13wa9_reve3l",
+      "tuneId": "tune_mqi13wa9_aqdi5r",
+      "version": 1,
+      "source": "initial",
+      "sourceEditionId": null,
+      "description": "v1初始",
+      "sectionsSnapshot": [
+        {
+          "id": "section_mqi13wab_f1cvhv",
+          "tuneId": "tune_mqi13wa9_aqdi5r",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "引子",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T12:10:03.443Z"
+          }
+        },
+        {
+          "id": "section_mqi13wae_z4b8y0",
+          "tuneId": "tune_mqi13wa9_aqdi5r",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "主歌",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T12:10:03.446Z"
+          }
+        }
+      ],
+      "isCurrent": false,
+      "createdAt": "2026-06-17T12:10:03.441Z"
+    },
+    {
+      "id": "edition_mqi13wan_w61f7q",
+      "tuneId": "tune_mqi13wa9_aqdi5r",
+      "version": 2,
+      "source": "copy_edition",
+      "sourceEditionId": "edition_mqi13wa9_reve3l",
+      "description": "v2修改版",
+      "sectionsSnapshot": [
+        {
+          "id": "section_mqi13wab_f1cvhv",
+          "tuneId": "tune_mqi13wa9_aqdi5r",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "引子",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T12:10:03.443Z"
+          }
+        },
+        {
+          "id": "section_mqi13wae_z4b8y0",
+          "tuneId": "tune_mqi13wa9_aqdi5r",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": true,
+          "note": "主歌",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T12:10:03.446Z"
+          }
+        },
+        {
+          "id": "section_mqi13waz_9br8ct",
+          "tuneId": "tune_mqi13wa9_aqdi5r",
+          "startBeat": 97,
+          "endBeat": 120,
+          "laneRange": "6-14",
+          "checked": true,
+          "note": "尾声",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 97-120 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqi13wae_z4b8y0",
+                  "nextSectionId": "section_mqi13waz_9br8ct",
+                  "gapStart": 65,
+                  "gapEnd": 96,
+                  "gapSize": 32
+                },
+                "detectedAt": "2026-06-17T12:10:03.468Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-17T12:10:03.468Z"
+          }
+        }
+      ],
+      "isCurrent": true,
+      "createdAt": "2026-06-17T12:10:03.455Z"
+    },
+    {
+      "id": "edition_mqi18o6p_owxao8",
+      "tuneId": "tune_mqi18o6p_gi969k",
+      "version": 1,
+      "source": "initial",
+      "sourceEditionId": null,
+      "description": "v1初始",
+      "sectionsSnapshot": [
+        {
+          "id": "section_mqi18o6s_9qyxq2",
+          "tuneId": "tune_mqi18o6p_gi969k",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "引子",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T12:13:46.228Z"
+          }
+        },
+        {
+          "id": "section_mqi18o6x_lps1mu",
+          "tuneId": "tune_mqi18o6p_gi969k",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "主歌",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T12:13:46.233Z"
+          }
+        }
+      ],
+      "isCurrent": false,
+      "createdAt": "2026-06-17T12:13:46.225Z"
+    },
+    {
+      "id": "edition_mqi18o72_bqxnh8",
+      "tuneId": "tune_mqi18o6p_gi969k",
+      "version": 2,
+      "source": "copy_edition",
+      "sourceEditionId": "edition_mqi18o6p_owxao8",
+      "description": "v2修改版",
+      "sectionsSnapshot": [
+        {
+          "id": "section_mqi18o6s_9qyxq2",
+          "tuneId": "tune_mqi18o6p_gi969k",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "引子",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T12:13:46.228Z"
+          }
+        },
+        {
+          "id": "section_mqi18o6x_lps1mu",
+          "tuneId": "tune_mqi18o6p_gi969k",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": true,
+          "note": "主歌",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T12:13:46.233Z"
+          }
+        },
+        {
+          "id": "section_mqi18o7c_17zwgp",
+          "tuneId": "tune_mqi18o6p_gi969k",
+          "startBeat": 97,
+          "endBeat": 120,
+          "laneRange": "6-14",
+          "checked": true,
+          "note": "尾声",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 97-120 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqi18o6x_lps1mu",
+                  "nextSectionId": "section_mqi18o7c_17zwgp",
+                  "gapStart": 65,
+                  "gapEnd": 96,
+                  "gapSize": 32
+                },
+                "detectedAt": "2026-06-17T12:13:46.248Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-17T12:13:46.248Z"
+          }
+        }
+      ],
+      "isCurrent": true,
+      "createdAt": "2026-06-17T12:13:46.238Z"
     }
   ],
   "sections": [
@@ -204,6 +444,112 @@
           }
         ],
         "lastCheckedAt": "2026-06-17T04:45:44.056Z"
+      }
+    },
+    {
+      "id": "section_mqi13wab_f1cvhv",
+      "tuneId": "tune_mqi13wa9_aqdi5r",
+      "startBeat": 1,
+      "endBeat": 32,
+      "laneRange": "1-10",
+      "checked": true,
+      "note": "引子",
+      "conflicts": {
+        "warnings": [],
+        "lastCheckedAt": "2026-06-17T12:10:03.443Z"
+      }
+    },
+    {
+      "id": "section_mqi13wae_z4b8y0",
+      "tuneId": "tune_mqi13wa9_aqdi5r",
+      "startBeat": 33,
+      "endBeat": 64,
+      "laneRange": "4-18",
+      "checked": true,
+      "note": "主歌",
+      "conflicts": {
+        "warnings": [],
+        "lastCheckedAt": "2026-06-17T12:10:03.446Z"
+      }
+    },
+    {
+      "id": "section_mqi13waz_9br8ct",
+      "tuneId": "tune_mqi13wa9_aqdi5r",
+      "startBeat": 97,
+      "endBeat": 120,
+      "laneRange": "6-14",
+      "checked": true,
+      "note": "尾声",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 97-120 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqi13wae_z4b8y0",
+              "nextSectionId": "section_mqi13waz_9br8ct",
+              "gapStart": 65,
+              "gapEnd": 96,
+              "gapSize": 32
+            },
+            "detectedAt": "2026-06-17T12:10:03.468Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-17T12:10:03.468Z"
+      }
+    },
+    {
+      "id": "section_mqi18o6s_9qyxq2",
+      "tuneId": "tune_mqi18o6p_gi969k",
+      "startBeat": 1,
+      "endBeat": 32,
+      "laneRange": "1-10",
+      "checked": true,
+      "note": "引子",
+      "conflicts": {
+        "warnings": [],
+        "lastCheckedAt": "2026-06-17T12:13:46.228Z"
+      }
+    },
+    {
+      "id": "section_mqi18o6x_lps1mu",
+      "tuneId": "tune_mqi18o6p_gi969k",
+      "startBeat": 33,
+      "endBeat": 64,
+      "laneRange": "4-18",
+      "checked": true,
+      "note": "主歌",
+      "conflicts": {
+        "warnings": [],
+        "lastCheckedAt": "2026-06-17T12:13:46.233Z"
+      }
+    },
+    {
+      "id": "section_mqi18o7c_17zwgp",
+      "tuneId": "tune_mqi18o6p_gi969k",
+      "startBeat": 97,
+      "endBeat": 120,
+      "laneRange": "6-14",
+      "checked": true,
+      "note": "尾声",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 97-120 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqi18o6x_lps1mu",
+              "nextSectionId": "section_mqi18o7c_17zwgp",
+              "gapStart": 65,
+              "gapEnd": 96,
+              "gapSize": 32
+            },
+            "detectedAt": "2026-06-17T12:13:46.248Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-17T12:13:46.248Z"
       }
     }
   ],
@@ -432,6 +778,86 @@
           }
         ],
         "lastCheckedAt": "2026-06-17T10:35:28.412Z"
+      }
+    },
+    {
+      "id": "issue_mqi13wah_hn1guc",
+      "tuneId": "tune_mqi13wa9_aqdi5r",
+      "editionId": "edition_mqi13wa9_reve3l",
+      "sectionId": "section_mqi13wae_z4b8y0",
+      "type": "漏孔",
+      "beat": 41,
+      "lane": 12,
+      "description": "漏孔",
+      "status": "verified",
+      "createdAt": "2026-06-17T12:10:03.449Z",
+      "resolvedAt": "2026-06-17T12:10:03.477Z",
+      "fixDescription": "重新打孔",
+      "fixTime": "2026-06-17T12:10:03.471Z",
+      "reviewNote": "OK",
+      "timeline": [
+        {
+          "status": "open",
+          "fromStatus": null,
+          "at": "2026-06-17T12:10:03.449Z",
+          "note": "创建问题"
+        },
+        {
+          "status": "fixed",
+          "fromStatus": "open",
+          "at": "2026-06-17T12:10:03.471Z",
+          "note": "重新打孔"
+        },
+        {
+          "status": "verified",
+          "fromStatus": "fixed",
+          "at": "2026-06-17T12:10:03.477Z",
+          "note": "OK"
+        }
+      ],
+      "conflicts": {
+        "warnings": [],
+        "lastCheckedAt": "2026-06-17T12:10:03.449Z"
+      }
+    },
+    {
+      "id": "issue_mqi18o6z_lmz33r",
+      "tuneId": "tune_mqi18o6p_gi969k",
+      "editionId": "edition_mqi18o6p_owxao8",
+      "sectionId": "section_mqi18o6x_lps1mu",
+      "type": "漏孔",
+      "beat": 41,
+      "lane": 12,
+      "description": "漏孔",
+      "status": "verified",
+      "createdAt": "2026-06-17T12:13:46.235Z",
+      "resolvedAt": "2026-06-17T12:13:46.252Z",
+      "fixDescription": "重新打孔",
+      "fixTime": "2026-06-17T12:13:46.250Z",
+      "reviewNote": "OK",
+      "timeline": [
+        {
+          "status": "open",
+          "fromStatus": null,
+          "at": "2026-06-17T12:13:46.235Z",
+          "note": "创建问题"
+        },
+        {
+          "status": "fixed",
+          "fromStatus": "open",
+          "at": "2026-06-17T12:13:46.250Z",
+          "note": "重新打孔"
+        },
+        {
+          "status": "verified",
+          "fromStatus": "fixed",
+          "at": "2026-06-17T12:13:46.252Z",
+          "note": "OK"
+        }
+      ],
+      "conflicts": {
+        "warnings": [],
+        "lastCheckedAt": "2026-06-17T12:13:46.235Z"
       }
     }
   ],

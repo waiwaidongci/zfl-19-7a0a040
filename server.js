@@ -1003,6 +1003,7 @@ const routes = [
   "POST /tunes/:id/editions",
   "GET /tunes/:id/editions/:editionId",
   "PATCH /tunes/:id/editions/:editionId/current",
+  "GET /tunes/:id/editions/:baseEditionId/compare/:targetEditionId",
   "GET /tunes/:id/play-sessions",
   "POST /tunes/:id/play-sessions",
   "PATCH /tunes/:id/archive",
@@ -1012,6 +1013,7 @@ const routes = [
   "GET /tunes/:id/report/snapshots",
   "GET /report-snapshots/:id",
   "PATCH /sections/:id/check",
+  "PUT /sections/:id",
   "GET /issues",
   "POST /issues",
   "PATCH /issues/:id/status",
@@ -1173,6 +1175,152 @@ function resolveTuneEdition(db, tuneId, editionId) {
     throw error;
   }
   return edition;
+}
+
+function compareEditions(baseEdition, targetEdition) {
+  const baseSections = baseEdition.sectionsSnapshot || [];
+  const targetSections = targetEdition.sectionsSnapshot || [];
+
+  const baseMap = new Map(baseSections.map((s) => [s.id, s]));
+  const targetMap = new Map(targetSections.map((s) => [s.id, s]));
+
+  const added = [];
+  const removed = [];
+  const beatChanges = [];
+  const laneRangeChanges = [];
+  const checkedStatusChanges = [];
+
+  for (const s of targetSections) {
+    if (!baseMap.has(s.id)) {
+      added.push({ ...s });
+    }
+  }
+
+  for (const s of baseSections) {
+    if (!targetMap.has(s.id)) {
+      removed.push({ ...s });
+    }
+  }
+
+  for (const s of baseSections) {
+    const target = targetMap.get(s.id);
+    if (!target) continue;
+
+    if (s.startBeat !== target.startBeat || s.endBeat !== target.endBeat) {
+      beatChanges.push({
+        sectionId: s.id,
+        base: { startBeat: s.startBeat, endBeat: s.endBeat },
+        target: { startBeat: target.startBeat, endBeat: target.endBeat },
+        section: target
+      });
+    }
+
+    if (s.laneRange !== target.laneRange) {
+      laneRangeChanges.push({
+        sectionId: s.id,
+        base: s.laneRange,
+        target: target.laneRange,
+        section: target
+      });
+    }
+
+    if (s.checked !== target.checked) {
+      checkedStatusChanges.push({
+        sectionId: s.id,
+        base: s.checked,
+        target: target.checked,
+        section: target
+      });
+    }
+  }
+
+  return {
+    added,
+    removed,
+    beatChanges,
+    laneRangeChanges,
+    checkedStatusChanges,
+    summary: {
+      totalAdded: added.length,
+      totalRemoved: removed.length,
+      totalBeatChanges: beatChanges.length,
+      totalLaneRangeChanges: laneRangeChanges.length,
+      totalCheckedStatusChanges: checkedStatusChanges.length
+    }
+  };
+}
+
+function compareEditionIssues(db, tuneId, baseEditionId, targetEditionId) {
+  const baseIssues = db.issues.filter((i) => i.tuneId === tuneId && i.editionId === baseEditionId);
+  const targetIssues = db.issues.filter((i) => i.tuneId === tuneId && i.editionId === targetEditionId);
+
+  const countByStatus = (issues) => {
+    const counts = { open: 0, fixed: 0, verified: 0, reopened: 0, total: issues.length };
+    for (const issue of issues) {
+      const status = issue.status === "resolved" ? "verified" : issue.status;
+      if (counts[status] !== undefined) {
+        counts[status]++;
+      }
+    }
+    return counts;
+  };
+
+  const baseCounts = countByStatus(baseIssues);
+  const targetCounts = countByStatus(targetIssues);
+
+  const baseByType = {};
+  for (const issue of baseIssues) {
+    baseByType[issue.type] = (baseByType[issue.type] || 0) + 1;
+  }
+
+  const targetByType = {};
+  for (const issue of targetIssues) {
+    targetByType[issue.type] = (targetByType[issue.type] || 0) + 1;
+  }
+
+  const allTypes = new Set([...Object.keys(baseByType), ...Object.keys(targetByType)]);
+  const typeDiff = {};
+  for (const type of allTypes) {
+    typeDiff[type] = {
+      base: baseByType[type] || 0,
+      target: targetByType[type] || 0,
+      diff: (targetByType[type] || 0) - (baseByType[type] || 0)
+    };
+  }
+
+  const baseIds = new Set(baseIssues.map((i) => i.id));
+  const targetIds = new Set(targetIssues.map((i) => i.id));
+
+  const newIssues = targetIssues.filter((i) => !baseIds.has(i.id));
+  const resolvedIssues = baseIssues.filter((i) => {
+    const targetIssue = targetIssues.find((t) => t.id === i.id);
+    if (!targetIssue) return false;
+    const baseStatus = i.status === "resolved" ? "verified" : i.status;
+    const targetStatus = targetIssue.status === "resolved" ? "verified" : targetIssue.status;
+    return ["open", "reopened", "fixed"].includes(baseStatus) && targetStatus === "verified";
+  });
+
+  const statusDiff = {
+    open: { base: baseCounts.open, target: targetCounts.open, diff: targetCounts.open - baseCounts.open },
+    fixed: { base: baseCounts.fixed, target: targetCounts.fixed, diff: targetCounts.fixed - baseCounts.fixed },
+    verified: { base: baseCounts.verified, target: targetCounts.verified, diff: targetCounts.verified - baseCounts.verified },
+    reopened: { base: baseCounts.reopened, target: targetCounts.reopened, diff: targetCounts.reopened - baseCounts.reopened },
+    total: { base: baseCounts.total, target: targetCounts.total, diff: targetCounts.total - baseCounts.total }
+  };
+
+  return {
+    statusDiff,
+    typeDiff,
+    newIssues,
+    resolvedIssues,
+    summary: {
+      baseTotal: baseCounts.total,
+      targetTotal: targetCounts.total,
+      netChange: targetCounts.total - baseCounts.total,
+      newIssuesCount: newIssues.length,
+      resolvedIssuesCount: resolvedIssues.length
+    }
+  };
 }
 
 function validatePriority(priority) {
@@ -2336,6 +2484,68 @@ async function handle(req, res) {
     return send(res, 200, { data: section });
   }
 
+  const sectionUpdateMatch = pathname.match(/^\/sections\/([^/]+)$/);
+  if (sectionUpdateMatch && req.method === "PUT") {
+    const sectionId = sectionUpdateMatch[1];
+    const section = db.sections.find((item) => item.id === sectionId);
+    if (!section) return send(res, 404, { error: "区间不存在" });
+    const tune = findTune(db, section.tuneId);
+    ensureTuneNotArchived(tune);
+    const body = await parseBody(req);
+
+    if (body.startBeat !== undefined) {
+      const startBeat = Number(body.startBeat);
+      if (isNaN(startBeat)) {
+        return send(res, 400, { error: "startBeat 必须是数字" });
+      }
+      section.startBeat = startBeat;
+    }
+
+    if (body.endBeat !== undefined) {
+      const endBeat = Number(body.endBeat);
+      if (isNaN(endBeat)) {
+        return send(res, 400, { error: "endBeat 必须是数字" });
+      }
+      section.endBeat = endBeat;
+    }
+
+    if (section.startBeat > section.endBeat) {
+      return send(res, 400, { error: "endBeat 不能小于 startBeat" });
+    }
+
+    if (body.laneRange !== undefined) {
+      if (!validateLaneRange(body.laneRange)) {
+        return send(res, 400, { error: "laneRange 格式无效，应为类似 \"1-10\" 的格式" });
+      }
+      section.laneRange = body.laneRange;
+    }
+
+    if (body.checked !== undefined) {
+      section.checked = Boolean(body.checked);
+    }
+
+    if (body.note !== undefined) {
+      section.note = body.note;
+    }
+
+    if (tune.currentEditionId) {
+      const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
+      if (edition) {
+        const snapSection = edition.sectionsSnapshot.find((s) => s.id === section.id);
+        if (snapSection) {
+          snapSection.startBeat = section.startBeat;
+          snapSection.endBeat = section.endBeat;
+          snapSection.laneRange = section.laneRange;
+          snapSection.checked = section.checked;
+          snapSection.note = section.note;
+        }
+      }
+    }
+
+    await writeDb(db);
+    return send(res, 200, { data: section });
+  }
+
   if (req.method === "GET" && pathname === "/issues") {
     const tuneId = searchParams.get("tuneId");
     const status = searchParams.get("status");
@@ -2791,6 +3001,49 @@ async function handle(req, res) {
 
     await writeDb(db);
     return send(res, 200, { data: edition });
+  }
+
+  const editionCompareMatch = pathname.match(
+    /^\/tunes\/([^/]+)\/editions\/([^/]+)\/compare\/([^/]+)$/
+  );
+  if (editionCompareMatch && req.method === "GET") {
+    const tuneId = editionCompareMatch[1];
+    const baseEditionId = editionCompareMatch[2];
+    const targetEditionId = editionCompareMatch[3];
+
+    findTune(db, tuneId);
+
+    const baseEdition = findEdition(db, baseEditionId);
+    if (baseEdition.tuneId !== tuneId) {
+      return send(res, 400, { error: "基准版次不属于该曲目" });
+    }
+
+    const targetEdition = findEdition(db, targetEditionId);
+    if (targetEdition.tuneId !== tuneId) {
+      return send(res, 400, { error: "目标版次不属于该曲目" });
+    }
+
+    const sectionDiff = compareEditions(baseEdition, targetEdition);
+    const issueDiff = compareEditionIssues(db, tuneId, baseEditionId, targetEditionId);
+
+    return send(res, 200, {
+      data: {
+        baseEdition: {
+          id: baseEdition.id,
+          version: baseEdition.version,
+          description: baseEdition.description,
+          createdAt: baseEdition.createdAt
+        },
+        targetEdition: {
+          id: targetEdition.id,
+          version: targetEdition.version,
+          description: targetEdition.description,
+          createdAt: targetEdition.createdAt
+        },
+        sectionDiff,
+        issueDiff
+      }
+    });
   }
 
   if (req.method === "GET" && pathname === "/strip-spec-templates") {

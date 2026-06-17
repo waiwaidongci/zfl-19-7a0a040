@@ -22,7 +22,8 @@ PORT=3019 node server.js
 - `GET /tunes/:id/unchecked-sections`
 
 ### 区间管理
-- `PATCH /sections/:id/check`
+- `PATCH /sections/:id/check`（标记区间检查状态，同步更新当前版次快照）
+- `PUT /sections/:id`（更新区间拍点范围、音轨范围、检查状态和备注，同步更新当前版次快照）
 
 ### 问题管理
 - `GET /issues?tuneId=&status=`
@@ -45,6 +46,31 @@ PORT=3019 node server.js
 **任务状态说明**：`pending`（待领取）→ `claimed`（已领取/进行中）→ `completed`（已完成）
 
 **优先级**：`low`（低）、`medium`（中，默认）、`high`（高）、`urgent`（紧急）
+
+### 纸带版次管理
+- `GET /tunes/:id/editions`（版次列表，按版本号升序）
+- `POST /tunes/:id/editions`（创建新版次，支持 `sourceEditionId` 从指定版次复制，`setAsCurrent: true/false`）
+- `GET /tunes/:id/editions/:editionId`（版次详情）
+- `PATCH /tunes/:id/editions/:editionId/current`（设为当前版次，同步覆盖实时区间）
+- `GET /tunes/:id/editions/:baseEditionId/compare/:targetEditionId`（对比两个版次差异）
+
+**版次对比接口返回结构说明**：
+
+| 字段 | 说明 |
+|------|------|
+| `baseEdition` | 基准版次信息 |
+| `targetEdition` | 目标版次信息 |
+| `sectionDiff.added` | 新增区间清单 |
+| `sectionDiff.removed` | 删除区间清单 |
+| `sectionDiff.beatChanges` | 拍点变化区间清单（含 base/target 对比） |
+| `sectionDiff.laneRangeChanges` | 音轨范围变化区间清单 |
+| `sectionDiff.checkedStatusChanges` | 检查状态变化区间清单 |
+| `sectionDiff.summary` | 区间变化统计 |
+| `issueDiff.statusDiff` | 各状态问题数量对比 |
+| `issueDiff.typeDiff` | 各类型问题数量对比 |
+| `issueDiff.newIssues` | 目标版次新增问题清单 |
+| `issueDiff.resolvedIssues` | 从基准到目标已解决问题清单 |
+| `issueDiff.summary` | 问题变化统计 |
 
 ### 纸带校对报告
 - `GET /tunes/:id/report`（按当前实时数据生成校对报告，不持久化）
@@ -539,4 +565,5 @@ curl -s -X POST http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshot \
 # 13. 查看所有快照，按时间倒序排列
 echo "===== 全部快照 ====="
 curl -s http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshots | python3 -m json.tool
+```
 ```
