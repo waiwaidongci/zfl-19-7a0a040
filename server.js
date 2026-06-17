@@ -180,6 +180,7 @@ const routes = [
   "GET /tunes/:id/progress",
   "GET /tunes/:id/sections",
   "POST /tunes/:id/sections",
+  "POST /tunes/:id/sections/batch",
   "GET /tunes/:id/unchecked-sections",
   "GET /tunes/:id/editions",
   "POST /tunes/:id/editions",
@@ -442,6 +443,27 @@ function validateStripSpec(spec) {
   }
 }
 
+function validateLaneRange(laneRange) {
+  if (typeof laneRange !== "string") return false;
+  const match = laneRange.match(/^(\d+)-(\d+)$/);
+  if (!match) return false;
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  return start > 0 && end >= start;
+}
+
+function checkOverlap(section1, section2) {
+  return !(section1.endBeat < section2.startBeat || section2.endBeat < section1.startBeat);
+}
+
+function isSameSection(section1, section2) {
+  return (
+    section1.startBeat === section2.startBeat &&
+    section1.endBeat === section2.endBeat &&
+    section1.laneRange === section2.laneRange
+  );
+}
+
 function buildProgress(db, tuneId) {
   findTune(db, tuneId);
   const edition = resolveTuneEdition(db, tuneId, null);
@@ -571,6 +593,137 @@ async function handle(req, res) {
     db.sections.push(section);
     await writeDb(db);
     return send(res, 201, { data: section });
+  }
+
+  const batchSectionsMatch = pathname.match(/^\/tunes\/([^/]+)\/sections\/batch$/);
+  if (batchSectionsMatch && req.method === "POST") {
+    const tuneId = batchSectionsMatch[1];
+    findTune(db, tuneId);
+    const body = await parseBody(req);
+
+    if (!Array.isArray(body)) {
+      return send(res, 400, { error: "请求体必须是区间数组" });
+    }
+
+    if (body.length === 0) {
+      return send(res, 400, { error: "区间数组不能为空" });
+    }
+
+    const errors = [];
+    const existingSections = db.sections.filter((s) => s.tuneId === tuneId);
+    const validSections = [];
+    const skippedDuplicates = [];
+
+    for (let i = 0; i < body.length; i++) {
+      const item = body[i];
+      const rowErrors = [];
+
+      if (item.startBeat === undefined || item.startBeat === "") {
+        rowErrors.push("缺少字段：startBeat");
+      } else if (isNaN(Number(item.startBeat))) {
+        rowErrors.push("startBeat 必须是数字");
+      }
+
+      if (item.endBeat === undefined || item.endBeat === "") {
+        rowErrors.push("缺少字段：endBeat");
+      } else if (isNaN(Number(item.endBeat))) {
+        rowErrors.push("endBeat 必须是数字");
+      }
+
+      if (item.laneRange === undefined || item.laneRange === "") {
+        rowErrors.push("缺少字段：laneRange");
+      } else if (!validateLaneRange(item.laneRange)) {
+        rowErrors.push("laneRange 格式无效，应为类似 \"1-10\" 的格式");
+      }
+
+      const hasValidBeats = !isNaN(Number(item.startBeat)) && !isNaN(Number(item.endBeat)) &&
+        item.startBeat !== undefined && item.startBeat !== "" &&
+        item.endBeat !== undefined && item.endBeat !== "";
+
+      if (hasValidBeats) {
+        const startBeat = Number(item.startBeat);
+        const endBeat = Number(item.endBeat);
+
+        if (endBeat < startBeat) {
+          rowErrors.push("endBeat 不能小于 startBeat");
+        }
+      }
+
+      if (rowErrors.length === 0) {
+        const startBeat = Number(item.startBeat);
+        const endBeat = Number(item.endBeat);
+        const tempSection = { startBeat, endBeat, laneRange: item.laneRange };
+
+        const isDuplicate = existingSections.some((s) => isSameSection(s, tempSection)) ||
+          validSections.some((s) => isSameSection(s, tempSection));
+
+        if (isDuplicate) {
+          skippedDuplicates.push({
+            index: i,
+            startBeat,
+            endBeat,
+            laneRange: item.laneRange
+          });
+          continue;
+        }
+
+        const overlapWithExisting = existingSections.some((s) => checkOverlap(s, tempSection));
+        const overlapWithBatch = validSections.some((s) => checkOverlap(s, tempSection));
+
+        if (overlapWithExisting || overlapWithBatch) {
+          rowErrors.push("区间与现有区间或批量导入中的其他区间重叠");
+        }
+
+        if (rowErrors.length === 0) {
+          validSections.push({
+            ...tempSection,
+            checked: Boolean(item.checked),
+            note: item.note || ""
+          });
+        }
+      }
+
+      if (rowErrors.length > 0) {
+        errors.push({
+          index: i,
+          data: item,
+          errors: rowErrors
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      return send(res, 400, {
+        error: "批量导入验证失败",
+        errors
+      });
+    }
+
+    const createdSections = [];
+    for (const vs of validSections) {
+      const section = {
+        id: makeId("section"),
+        tuneId,
+        startBeat: vs.startBeat,
+        endBeat: vs.endBeat,
+        laneRange: vs.laneRange,
+        checked: vs.checked,
+        note: vs.note
+      };
+      db.sections.push(section);
+      createdSections.push(section);
+    }
+
+    await writeDb(db);
+
+    const progress = buildProgress(db, tuneId);
+
+    return send(res, 201, {
+      addedCount: createdSections.length,
+      skippedDuplicates,
+      progress,
+      data: createdSections
+    });
   }
 
   const uncheckedMatch = pathname.match(/^\/tunes\/([^/]+)\/unchecked-sections$/);
