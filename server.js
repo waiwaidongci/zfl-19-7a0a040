@@ -1662,13 +1662,59 @@ async function handle(req, res) {
 
   if (req.method === "GET" && pathname === "/tunes") {
     const archivedFilter = searchParams.get("archived");
+    const titleFilter = searchParams.get("title");
+    const composerFilter = searchParams.get("composer");
+    const templateIdFilter = searchParams.get("templateId");
+    const templateNameFilter = searchParams.get("templateName");
+    const progressMin = searchParams.get("progressMin");
+    const progressMax = searchParams.get("progressMax");
+
     let tunes = db.tunes;
     if (archivedFilter === "true") {
       tunes = tunes.filter((t) => t.archived);
     } else if (archivedFilter === "false" || archivedFilter === null) {
       tunes = tunes.filter((t) => !t.archived);
+    } else if (archivedFilter === "all") {
+      // 不做筛选，返回全部
     }
-    const result = tunes.map((tune) => ({ ...tune, progress: buildProgress(db, tune.id) }));
+
+    if (titleFilter) {
+      const lowerTitle = titleFilter.toLowerCase();
+      tunes = tunes.filter((t) => t.title.toLowerCase().includes(lowerTitle));
+    }
+
+    if (composerFilter) {
+      const lowerComposer = composerFilter.toLowerCase();
+      tunes = tunes.filter((t) => t.composer && t.composer.toLowerCase().includes(lowerComposer));
+    }
+
+    if (templateIdFilter) {
+      tunes = tunes.filter((t) => t.templateId === templateIdFilter);
+    }
+
+    if (templateNameFilter) {
+      const lowerTplName = templateNameFilter.toLowerCase();
+      tunes = tunes.filter(
+        (t) => t.templateNameSnapshot && t.templateNameSnapshot.toLowerCase().includes(lowerTplName)
+      );
+    }
+
+    let result = tunes.map((tune) => ({ ...tune, progress: buildProgress(db, tune.id) }));
+
+    if (progressMin !== null) {
+      const min = Number(progressMin);
+      if (!Number.isNaN(min)) {
+        result = result.filter((r) => r.progress.percent >= min);
+      }
+    }
+
+    if (progressMax !== null) {
+      const max = Number(progressMax);
+      if (!Number.isNaN(max)) {
+        result = result.filter((r) => r.progress.percent <= max);
+      }
+    }
+
     return send(res, 200, { data: result });
   }
 
