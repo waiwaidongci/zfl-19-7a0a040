@@ -310,12 +310,39 @@
       "tuneId": "tune_demo",
       "sectionId": "section_demo_2",
       "priority": "high",
+      "assignee": "李四",
+      "status": "completed",
+      "createdAt": "2026-06-17T02:14:13.816Z",
+      "claimedAt": "2026-06-17T07:38:22.069Z",
+      "completedAt": "2026-06-17T07:39:46.895Z",
+      "note": "已完成",
+      "originalAssignee": "张三",
+      "transferHistory": [
+        {
+          "fromAssignee": "张三",
+          "toAssignee": "李四",
+          "transferredAt": "2026-06-17T07:38:36.236Z",
+          "note": "张三临时有事，转交给李四处理"
+        }
+      ],
+      "lastTransferredAt": "2026-06-17T07:38:36.236Z",
+      "lastTransferNote": "张三临时有事，转交给李四处理"
+    },
+    {
+      "id": "task_mqhrfjb5_zcqqwc",
+      "tuneId": "tune_demo",
+      "sectionId": "section_mqhl8hrs_o5a55s",
+      "priority": "medium",
       "assignee": null,
       "status": "pending",
-      "createdAt": "2026-06-17T02:14:13.816Z",
+      "createdAt": "2026-06-17T07:39:10.337Z",
       "claimedAt": null,
       "completedAt": null,
-      "note": "副歌段待打孔校对"
+      "note": "测试任务",
+      "originalAssignee": null,
+      "transferHistory": [],
+      "lastTransferredAt": null,
+      "lastTransferNote": null
     }
   ],
   "stripSpecTemplates": [
@@ -583,5 +610,5 @@
       "createdAt": "2026-06-17T04:20:05.417Z"
     }
   ],
-  "_dataVersion": 3
+  "_dataVersion": 4
 }

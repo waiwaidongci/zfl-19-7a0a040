@@ -7,7 +7,7 @@ const DB_FILE = path.join(__dirname, "data", "db.json");
 const BACKUP_DIR = path.join(__dirname, "data", "backups");
 const MIGRATION_LOG_FILE = path.join(__dirname, "data", "migration-log.json");
 
-const CURRENT_DATA_VERSION = 3;
+const CURRENT_DATA_VERSION = 4;
 
 const VALID_ISSUE_STATUSES = ["open", "fixed", "verified", "reopened"];
 const VALID_TASK_STATUSES = ["pending", "claimed", "completed"];
@@ -121,7 +121,11 @@ const initialData = {
       createdAt: new Date().toISOString(),
       claimedAt: null,
       completedAt: null,
-      note: "副歌段待打孔校对"
+      note: "副歌段待打孔校对",
+      originalAssignee: null,
+      transferHistory: [],
+      lastTransferredAt: null,
+      lastTransferNote: null
     }
   ],
   stripSpecTemplates: [
@@ -731,10 +735,42 @@ function migrate_v2_to_v3(data, report) {
   return changes.length > 0;
 }
 
+function migrate_v3_to_v4(data, report) {
+  const changes = [];
+  let fixedCount = 0;
+
+  for (const task of data.punchTasks || []) {
+    if (task.originalAssignee === undefined) {
+      task.originalAssignee = task.assignee || null;
+      fixedCount++;
+    }
+    if (task.transferHistory === undefined) {
+      task.transferHistory = [];
+      fixedCount++;
+    }
+    if (task.lastTransferredAt === undefined) {
+      task.lastTransferredAt = null;
+      fixedCount++;
+    }
+    if (task.lastTransferNote === undefined) {
+      task.lastTransferNote = null;
+      fixedCount++;
+    }
+  }
+  if (fixedCount > 0) {
+    changes.push(`added/normalized ${fixedCount} transfer-related fields in ${(data.punchTasks || []).length} punch tasks`);
+  }
+
+  data._dataVersion = 4;
+  report.steps.push({ version: 4, changes });
+  return changes.length > 0;
+}
+
 const MIGRATIONS = [
   { from: 0, to: 1, run: migrate_v0_to_v1 },
   { from: 1, to: 2, run: migrate_v1_to_v2 },
-  { from: 2, to: 3, run: migrate_v2_to_v3 }
+  { from: 2, to: 3, run: migrate_v2_to_v3 },
+  { from: 3, to: 4, run: migrate_v3_to_v4 }
 ];
 
 async function runMigrations() {
@@ -902,7 +938,8 @@ const routes = [
   "POST /punch-tasks/generate",
   "POST /punch-tasks",
   "PATCH /punch-tasks/:id/claim",
-  "PATCH /punch-tasks/:id/complete"
+  "PATCH /punch-tasks/:id/complete",
+  "PATCH /punch-tasks/:id/reassign"
 ];
 
 async function ensureDb() {
@@ -2524,7 +2561,11 @@ async function handle(req, res) {
         createdAt: new Date().toISOString(),
         claimedAt: null,
         completedAt: null,
-        note: section.note || `区间 ${section.startBeat}-${section.endBeat} 待打孔`
+        note: section.note || `区间 ${section.startBeat}-${section.endBeat} 待打孔`,
+        originalAssignee: null,
+        transferHistory: [],
+        lastTransferredAt: null,
+        lastTransferNote: null
       };
       db.punchTasks.push(task);
       createdTasks.push(task);
@@ -2568,7 +2609,11 @@ async function handle(req, res) {
       createdAt: new Date().toISOString(),
       claimedAt: null,
       completedAt: null,
-      note: body.note || ""
+      note: body.note || "",
+      originalAssignee: null,
+      transferHistory: [],
+      lastTransferredAt: null,
+      lastTransferNote: null
     };
     db.punchTasks.push(task);
     await writeDb(db);
@@ -2587,6 +2632,9 @@ async function handle(req, res) {
     required(body, ["assignee"]);
 
     task.assignee = body.assignee;
+    if (task.originalAssignee === undefined || task.originalAssignee === null) {
+      task.originalAssignee = body.assignee;
+    }
     task.status = "claimed";
     task.claimedAt = new Date().toISOString();
     task.note = body.note ?? task.note;
@@ -2636,6 +2684,40 @@ async function handle(req, res) {
       data: task,
       sectionChecked: body.checkSection === true
     });
+  }
+
+  const reassignTaskMatch = pathname.match(/^\/punch-tasks\/([^/]+)\/reassign$/);
+  if (reassignTaskMatch && req.method === "PATCH") {
+    const task = findPunchTask(db, reassignTaskMatch[1]);
+    const tune = findTune(db, task.tuneId);
+    ensureTuneNotArchived(tune);
+    if (task.status === "completed") {
+      return send(res, 400, { error: "已完成任务不允许转派" });
+    }
+    if (task.status === "pending") {
+      return send(res, 400, { error: "待领取任务请走领取流程（claim），不可转派" });
+    }
+    const body = await parseBody(req);
+    required(body, ["newAssignee"]);
+    if (!body.newAssignee || typeof body.newAssignee !== "string" || body.newAssignee.trim() === "") {
+      return send(res, 400, { error: "newAssignee 不能为空" });
+    }
+    const now = new Date().toISOString();
+    const transferRecord = {
+      fromAssignee: task.assignee,
+      toAssignee: body.newAssignee,
+      transferredAt: now,
+      note: body.transferNote || null
+    };
+    if (!Array.isArray(task.transferHistory)) {
+      task.transferHistory = [];
+    }
+    task.transferHistory.push(transferRecord);
+    task.assignee = body.newAssignee;
+    task.lastTransferredAt = now;
+    task.lastTransferNote = body.transferNote || null;
+    await writeDb(db);
+    return send(res, 200, { data: task });
   }
 
   const reportMatch = pathname.match(/^\/tunes\/([^/]+)\/report$/);
