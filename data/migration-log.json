@@ -1,0 +1,34 @@
+{
+  "history": [
+    {
+      "timestamp": "2026-06-17T07:38:00.028Z",
+      "success": true,
+      "fromVersion": 3,
+      "toVersion": 4,
+      "backupPath": "/Users/ali/Desktop/zfl  new solo coder/zfl-19/data/backups/db_backup_v2026-06-17T07-38-00-026Z.json",
+      "steps": [
+        {
+          "version": 4,
+          "changes": [
+            "added/normalized 4 transfer-related fields in 1 punch tasks"
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-06-17T08:35:26.660Z",
+      "success": true,
+      "fromVersion": 4,
+      "toVersion": 5,
+      "backupPath": "/Users/ali/Desktop/zfl  new solo coder/zfl-19/data/backups/db_backup_v2026-06-17T08-35-26-652Z.json",
+      "steps": [
+        {
+          "version": 5,
+          "changes": [
+            "added dueAt field (default null) to 2 punch tasks"
+          ]
+        }
+      ]
+    }
+  ]
+}

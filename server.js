@@ -7,7 +7,8 @@ const DB_FILE = path.join(__dirname, "data", "db.json");
 const BACKUP_DIR = path.join(__dirname, "data", "backups");
 const MIGRATION_LOG_FILE = path.join(__dirname, "data", "migration-log.json");
 
-const CURRENT_DATA_VERSION = 4;
+const CURRENT_DATA_VERSION = 5;
+const URGENT_HOURS_THRESHOLD = 24;
 
 const VALID_ISSUE_STATUSES = ["open", "fixed", "verified", "reopened"];
 const VALID_TASK_STATUSES = ["pending", "claimed", "completed"];
@@ -125,7 +126,8 @@ const initialData = {
       originalAssignee: null,
       transferHistory: [],
       lastTransferredAt: null,
-      lastTransferNote: null
+      lastTransferNote: null,
+      dueAt: null
     }
   ],
   stripSpecTemplates: [
@@ -766,11 +768,31 @@ function migrate_v3_to_v4(data, report) {
   return changes.length > 0;
 }
 
+function migrate_v4_to_v5(data, report) {
+  const changes = [];
+  let fixedCount = 0;
+
+  for (const task of data.punchTasks || []) {
+    if (task.dueAt === undefined) {
+      task.dueAt = null;
+      fixedCount++;
+    }
+  }
+  if (fixedCount > 0) {
+    changes.push(`added dueAt field (default null) to ${fixedCount} punch tasks`);
+  }
+
+  data._dataVersion = 5;
+  report.steps.push({ version: 5, changes });
+  return changes.length > 0;
+}
+
 const MIGRATIONS = [
   { from: 0, to: 1, run: migrate_v0_to_v1 },
   { from: 1, to: 2, run: migrate_v1_to_v2 },
   { from: 2, to: 3, run: migrate_v2_to_v3 },
-  { from: 3, to: 4, run: migrate_v3_to_v4 }
+  { from: 3, to: 4, run: migrate_v3_to_v4 },
+  { from: 4, to: 5, run: migrate_v4_to_v5 }
 ];
 
 async function runMigrations() {
@@ -1104,6 +1126,66 @@ function validateTaskStatus(status) {
     error.status = 400;
     throw error;
   }
+}
+
+function validateDueAt(dueAt) {
+  if (dueAt === undefined || dueAt === null || dueAt === "") return null;
+  const date = new Date(dueAt);
+  if (isNaN(date.getTime())) {
+    const error = new Error("dueAt 必须是有效的 ISO 日期时间字符串");
+    error.status = 400;
+    throw error;
+  }
+  return date.toISOString();
+}
+
+function isTaskOverdue(task, now = new Date()) {
+  if (!task.dueAt || task.status === "completed") return false;
+  const dueDate = new Date(task.dueAt);
+  if (isNaN(dueDate.getTime())) return false;
+  return dueDate < now;
+}
+
+function getHoursUntilDue(task, now = new Date()) {
+  if (!task.dueAt) return null;
+  const dueDate = new Date(task.dueAt);
+  if (isNaN(dueDate.getTime())) return null;
+  const diffMs = dueDate.getTime() - now.getTime();
+  return diffMs / (1000 * 60 * 60);
+}
+
+function isTaskUrgent(task, now = new Date()) {
+  if (task.status === "completed") return false;
+  if (task.priority === "urgent") return true;
+  const hoursLeft = getHoursUntilDue(task, now);
+  if (hoursLeft !== null && hoursLeft <= URGENT_HOURS_THRESHOLD && hoursLeft > 0) {
+    return true;
+  }
+  return false;
+}
+
+function sortPunchTasks(tasks, now = new Date()) {
+  return [...tasks].sort((a, b) => {
+    const aOverdue = isTaskOverdue(a, now) ? 0 : 1;
+    const bOverdue = isTaskOverdue(b, now) ? 0 : 1;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+
+    const aUrgent = isTaskUrgent(a, now) ? 0 : 1;
+    const bUrgent = isTaskUrgent(b, now) ? 0 : 1;
+    if (aUrgent !== bUrgent) return aUrgent - bUrgent;
+
+    const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+    const pDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+    if (pDiff !== 0) return pDiff;
+
+    if (a.dueAt && b.dueAt) {
+      return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+    }
+    if (a.dueAt) return -1;
+    if (b.dueAt) return 1;
+
+    return a.createdAt < b.createdAt ? -1 : 1;
+  });
 }
 
 function validateIssueStatus(status) {
@@ -1517,9 +1599,18 @@ function buildProgress(db, tuneId) {
       (!edition || item.editionId === edition.id)
   );
   const sessions = db.playSessions.filter((item) => item.tuneId === tuneId);
+  const punchTasks = db.punchTasks.filter((item) => item.tuneId === tuneId);
+  const now = new Date();
+
   const checkedCount = sections.filter((item) => item.checked).length;
   const openIssues = issues.filter((item) => item.status !== "verified").length;
   const resolvedIssues = issues.filter((item) => item.status === "verified").length;
+
+  const pendingTasks = punchTasks.filter((t) => t.status !== "completed");
+  const overdueTasks = pendingTasks.filter((t) => isTaskOverdue(t, now));
+  const urgentTasks = pendingTasks.filter((t) => isTaskUrgent(t, now));
+  const completedTasks = punchTasks.filter((t) => t.status === "completed").length;
+
   let lastPlayedAt = null;
   if (sessions.length) {
     lastPlayedAt = sessions.reduce((latest, s) => {
@@ -1537,7 +1628,14 @@ function buildProgress(db, tuneId) {
     resolvedIssues,
     percent: sections.length ? Math.round((checkedCount / sections.length) * 100) : 0,
     lastPlayedAt,
-    conflicts
+    conflicts,
+    punchTasks: {
+      total: punchTasks.length,
+      pending: pendingTasks.length,
+      completed: completedTasks,
+      overdue: overdueTasks.length,
+      urgent: urgentTasks.length
+    }
   };
 }
 
@@ -1550,6 +1648,7 @@ function buildReport(db, tuneId) {
       item.tuneId === tuneId &&
       (!edition || item.editionId === edition.id)
   );
+  const now = new Date();
 
   const checkedSections = sections.filter((s) => s.checked);
   const uncheckedSections = sections.filter((s) => !s.checked);
@@ -1584,34 +1683,92 @@ function buildReport(db, tuneId) {
   const pendingPunchTasks = db.punchTasks.filter(
     (t) => t.tuneId === tuneId && t.status !== "completed"
   );
-  const uncheckedWithUrgentTask = uncheckedSections.filter((s) =>
-    pendingPunchTasks.some(
-      (t) => t.sectionId === s.id && (t.priority === "urgent" || t.priority === "high")
-    )
+  const sortedPendingTasks = sortPunchTasks(pendingPunchTasks, now);
+
+  const overdueTasks = sortedPendingTasks.filter((t) => isTaskOverdue(t, now));
+  const urgentTasks = sortedPendingTasks.filter(
+    (t) => !isTaskOverdue(t, now) && isTaskUrgent(t, now)
   );
-  for (const s of uncheckedWithUrgentTask) {
-    const task = pendingPunchTasks.find((t) => t.sectionId === s.id);
+  const highPriorityTasks = sortedPendingTasks.filter(
+    (t) =>
+      !isTaskOverdue(t, now) &&
+      !isTaskUrgent(t, now) &&
+      (t.priority === "urgent" || t.priority === "high")
+  );
+
+  for (const task of overdueTasks) {
+    const s = sections.find((sec) => sec.id === task.sectionId);
+    nextSteps.push({
+      action: "punch_task",
+      priority: "urgent",
+      isOverdue: true,
+      isUrgent: false,
+      sectionId: task.sectionId,
+      section: s
+        ? { startBeat: s.startBeat, endBeat: s.endBeat, laneRange: s.laneRange }
+        : null,
+      taskId: task.id,
+      dueAt: task.dueAt,
+      hoursUntilDue: getHoursUntilDue(task, now),
+      note: `该区间打孔任务已逾期，截止时间 ${task.dueAt}`
+    });
+  }
+  for (const task of urgentTasks) {
+    const s = sections.find((sec) => sec.id === task.sectionId);
+    nextSteps.push({
+      action: "punch_task",
+      priority: "urgent",
+      isOverdue: false,
+      isUrgent: true,
+      sectionId: task.sectionId,
+      section: s
+        ? { startBeat: s.startBeat, endBeat: s.endBeat, laneRange: s.laneRange }
+        : null,
+      taskId: task.id,
+      dueAt: task.dueAt,
+      hoursUntilDue: getHoursUntilDue(task, now),
+      note: `该区间打孔任务即将到期，剩余约 ${Math.max(0, Math.round(getHoursUntilDue(task, now)))} 小时`
+    });
+  }
+  for (const task of highPriorityTasks) {
+    const s = sections.find((sec) => sec.id === task.sectionId);
     nextSteps.push({
       action: "punch_task",
       priority: task.priority,
-      sectionId: s.id,
-      section: { startBeat: s.startBeat, endBeat: s.endBeat, laneRange: s.laneRange },
+      isOverdue: false,
+      isUrgent: false,
+      sectionId: task.sectionId,
+      section: s
+        ? { startBeat: s.startBeat, endBeat: s.endBeat, laneRange: s.laneRange }
+        : null,
       taskId: task.id,
+      dueAt: task.dueAt,
+      hoursUntilDue: getHoursUntilDue(task, now),
       note: "该区间有高优先级打孔任务"
     });
   }
+
+  const coveredSectionIds = new Set([
+    ...overdueTasks.map((t) => t.sectionId),
+    ...urgentTasks.map((t) => t.sectionId),
+    ...highPriorityTasks.map((t) => t.sectionId)
+  ]);
+
   const remainingUnchecked = uncheckedSections.filter(
-    (s) => !uncheckedWithUrgentTask.some((u) => u.id === s.id)
+    (s) => !coveredSectionIds.has(s.id)
   );
   for (const s of remainingUnchecked) {
     nextSteps.push({
       action: "check_section",
       priority: "medium",
+      isOverdue: false,
+      isUrgent: false,
       sectionId: s.id,
       section: { startBeat: s.startBeat, endBeat: s.endBeat, laneRange: s.laneRange },
       note: "区间尚未检查"
     });
   }
+
   const openIssuesBySection = {};
   for (const issue of openIssues) {
     if (!openIssuesBySection[issue.sectionId]) {
@@ -1620,8 +1777,7 @@ function buildReport(db, tuneId) {
     openIssuesBySection[issue.sectionId].push(issue);
   }
   const sectionsWithOpenIssues = Object.keys(openIssuesBySection).filter(
-    (sid) => !uncheckedWithUrgentTask.some((u) => u.id === sid) &&
-      !remainingUnchecked.some((u) => u.id === sid)
+    (sid) => !coveredSectionIds.has(sid) && !remainingUnchecked.some((u) => u.id === sid)
   );
   for (const sid of sectionsWithOpenIssues) {
     const section = sections.find((s) => s.id === sid);
@@ -1629,6 +1785,8 @@ function buildReport(db, tuneId) {
     nextSteps.push({
       action: "fix_issues",
       priority: "high",
+      isOverdue: false,
+      isUrgent: false,
       sectionId: sid,
       section: section
         ? { startBeat: section.startBeat, endBeat: section.endBeat, laneRange: section.laneRange }
@@ -1638,10 +1796,22 @@ function buildReport(db, tuneId) {
       note: `该区间有 ${sectionIssues.length} 个未关闭问题`
     });
   }
+
   nextSteps.sort((a, b) => {
+    const aOverdue = a.isOverdue ? 0 : 1;
+    const bOverdue = b.isOverdue ? 0 : 1;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+
+    const aUrgent = a.isUrgent ? 0 : 1;
+    const bUrgent = b.isUrgent ? 0 : 1;
+    if (aUrgent !== bUrgent) return aUrgent - bUrgent;
+
     const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
+
+  const overdueTaskCount = pendingPunchTasks.filter((t) => isTaskOverdue(t, now)).length;
+  const urgentTaskCount = pendingPunchTasks.filter((t) => isTaskUrgent(t, now)).length;
 
   return {
     tuneId: tune.id,
@@ -1664,7 +1834,10 @@ function buildReport(db, tuneId) {
     summary: {
       totalIssues: issues.length,
       openIssues: openIssues.length,
-      closedIssues: closedIssues.length
+      closedIssues: closedIssues.length,
+      totalPunchTasks: pendingPunchTasks.length,
+      overduePunchTasks: overdueTaskCount,
+      urgentPunchTasks: urgentTaskCount
     },
     suggestedNextSteps: nextSteps,
     generatedAt: new Date().toISOString()
@@ -2480,31 +2653,34 @@ async function handle(req, res) {
     const priority = searchParams.get("priority");
     const assignee = searchParams.get("assignee");
     const onlyUnassigned = searchParams.get("onlyUnassigned") === "true";
+    const onlyOverdue = searchParams.get("onlyOverdue") === "true";
+    const onlyUrgent = searchParams.get("onlyUrgent") === "true";
 
     if (status) validateTaskStatus(status);
     if (priority) validatePriority(priority);
 
+    const now = new Date();
     let tasks = db.punchTasks.filter((item) => {
       if (tuneId && item.tuneId !== tuneId) return false;
       if (status && item.status !== status) return false;
       if (priority && item.priority !== priority) return false;
       if (assignee && item.assignee !== assignee) return false;
       if (onlyUnassigned && item.assignee) return false;
+      if (onlyOverdue && !isTaskOverdue(item, now)) return false;
+      if (onlyUrgent && !isTaskUrgent(item, now)) return false;
       return true;
     });
 
-    tasks = tasks.sort((a, b) => {
-      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
-      const pDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-      if (pDiff !== 0) return pDiff;
-      return a.createdAt < b.createdAt ? -1 : 1;
-    });
+    tasks = sortPunchTasks(tasks, now);
 
     const enriched = tasks.map((task) => {
       const tune = db.tunes.find((t) => t.id === task.tuneId);
       const section = db.sections.find((s) => s.id === task.sectionId);
       return {
         ...task,
+        overdue: isTaskOverdue(task, now),
+        isUrgent: isTaskUrgent(task, now),
+        hoursUntilDue: getHoursUntilDue(task, now),
         tuneTitle: tune ? tune.title : null,
         section: section
           ? {
@@ -2526,6 +2702,7 @@ async function handle(req, res) {
     const tuneId = body.tuneId;
     const defaultPriority = body.defaultPriority || "medium";
     validatePriority(defaultPriority);
+    const defaultDueAt = validateDueAt(body.defaultDueAt);
 
     if (tuneId) {
       const tune = findTune(db, tuneId);
@@ -2545,6 +2722,7 @@ async function handle(req, res) {
     }
 
     const createdTasks = [];
+    const now = new Date();
     for (const section of uncheckedSections) {
       const existingTask = db.punchTasks.find(
         (t) => t.sectionId === section.id && t.status !== "completed"
@@ -2558,17 +2736,23 @@ async function handle(req, res) {
         priority: defaultPriority,
         assignee: null,
         status: "pending",
-        createdAt: new Date().toISOString(),
+        createdAt: now.toISOString(),
         claimedAt: null,
         completedAt: null,
         note: section.note || `区间 ${section.startBeat}-${section.endBeat} 待打孔`,
         originalAssignee: null,
         transferHistory: [],
         lastTransferredAt: null,
-        lastTransferNote: null
+        lastTransferNote: null,
+        dueAt: defaultDueAt
       };
       db.punchTasks.push(task);
-      createdTasks.push(task);
+      createdTasks.push({
+        ...task,
+        overdue: isTaskOverdue(task, now),
+        isUrgent: isTaskUrgent(task, now),
+        hoursUntilDue: getHoursUntilDue(task, now)
+      });
     }
 
     await writeDb(db);
@@ -2591,6 +2775,7 @@ async function handle(req, res) {
 
     const priority = body.priority || "medium";
     validatePriority(priority);
+    const dueAt = validateDueAt(body.dueAt);
 
     const existingTask = db.punchTasks.find(
       (t) => t.sectionId === body.sectionId && t.status !== "completed"
@@ -2613,11 +2798,20 @@ async function handle(req, res) {
       originalAssignee: null,
       transferHistory: [],
       lastTransferredAt: null,
-      lastTransferNote: null
+      lastTransferNote: null,
+      dueAt
     };
     db.punchTasks.push(task);
     await writeDb(db);
-    return send(res, 201, { data: task });
+    const now = new Date();
+    return send(res, 201, {
+      data: {
+        ...task,
+        overdue: isTaskOverdue(task, now),
+        isUrgent: isTaskUrgent(task, now),
+        hoursUntilDue: getHoursUntilDue(task, now)
+      }
+    });
   }
 
   const claimTaskMatch = pathname.match(/^\/punch-tasks\/([^/]+)\/claim$/);
@@ -2631,6 +2825,9 @@ async function handle(req, res) {
     const body = await parseBody(req);
     required(body, ["assignee"]);
 
+    if (body.dueAt !== undefined) {
+      task.dueAt = validateDueAt(body.dueAt);
+    }
     task.assignee = body.assignee;
     if (task.originalAssignee === undefined || task.originalAssignee === null) {
       task.originalAssignee = body.assignee;
@@ -2639,7 +2836,15 @@ async function handle(req, res) {
     task.claimedAt = new Date().toISOString();
     task.note = body.note ?? task.note;
     await writeDb(db);
-    return send(res, 200, { data: task });
+    const now = new Date();
+    return send(res, 200, {
+      data: {
+        ...task,
+        overdue: isTaskOverdue(task, now),
+        isUrgent: isTaskUrgent(task, now),
+        hoursUntilDue: getHoursUntilDue(task, now)
+      }
+    });
   }
 
   const completeTaskMatch = pathname.match(/^\/punch-tasks\/([^/]+)\/complete$/);
@@ -2680,8 +2885,14 @@ async function handle(req, res) {
     }
 
     await writeDb(db);
+    const now = new Date();
     return send(res, 200, {
-      data: task,
+      data: {
+        ...task,
+        overdue: isTaskOverdue(task, now),
+        isUrgent: isTaskUrgent(task, now),
+        hoursUntilDue: getHoursUntilDue(task, now)
+      },
       sectionChecked: body.checkSection === true
     });
   }
@@ -2717,7 +2928,15 @@ async function handle(req, res) {
     task.lastTransferredAt = now;
     task.lastTransferNote = body.transferNote || null;
     await writeDb(db);
-    return send(res, 200, { data: task });
+    const nowDate = new Date();
+    return send(res, 200, {
+      data: {
+        ...task,
+        overdue: isTaskOverdue(task, nowDate),
+        isUrgent: isTaskUrgent(task, nowDate),
+        hoursUntilDue: getHoursUntilDue(task, nowDate)
+      }
+    });
   }
 
   const reportMatch = pathname.match(/^\/tunes\/([^/]+)\/report$/);
