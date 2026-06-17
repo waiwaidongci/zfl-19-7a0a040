@@ -714,6 +714,16 @@ async function handle(req, res) {
       createdSections.push(section);
     }
 
+    const tune = db.tunes.find((t) => t.id === tuneId);
+    if (tune && tune.currentEditionId) {
+      const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
+      if (edition) {
+        for (const section of createdSections) {
+          edition.sectionsSnapshot.push({ ...section });
+        }
+      }
+    }
+
     await writeDb(db);
 
     const progress = buildProgress(db, tuneId);
