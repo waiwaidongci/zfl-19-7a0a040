@@ -2105,7 +2105,9 @@ function buildProgress(db, tuneId) {
 function buildReport(db, tuneId) {
   const tune = findTune(db, tuneId);
   const edition = resolveTuneEdition(db, tuneId, null);
-  const sections = db.sections.filter((item) => item.tuneId === tuneId);
+  const sections = edition
+    ? edition.sectionsSnapshot
+    : db.sections.filter((item) => item.tuneId === tuneId);
   const issues = db.issues.filter(
     (item) =>
       item.tuneId === tuneId &&
@@ -3459,8 +3461,14 @@ async function handle(req, res) {
 
     const enriched = tasks.map((task) => {
       const tune = db.tunes.find((t) => t.id === task.tuneId);
-      const section = db.sections.find((s) => s.id === task.sectionId);
       const taskEdition = task.editionId ? db.tapeEditions.find((e) => e.id === task.editionId) : null;
+      let section = null;
+      if (taskEdition) {
+        section = taskEdition.sectionsSnapshot.find((s) => s.id === task.sectionId);
+      }
+      if (!section) {
+        section = db.sections.find((s) => s.id === task.sectionId);
+      }
       return {
         ...task,
         overdue: isTaskOverdue(task, now),

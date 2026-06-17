@@ -67,6 +67,23 @@
       "archived": false,
       "archivedAt": null,
       "createdAt": "2026-06-17T12:13:46.225Z"
+    },
+    {
+      "id": "tune_mqia633b_an5cr7",
+      "title": "版次验证测试",
+      "composer": "",
+      "stripSpec": {
+        "widthMm": 70,
+        "scale": "20音",
+        "tempoBpm": 80,
+        "paperType": "普通纸带"
+      },
+      "templateId": "tpl_20_standard",
+      "templateNameSnapshot": "20音标准纸带",
+      "currentEditionId": "edition_mqia6pzs_0vyt2m",
+      "archived": false,
+      "archivedAt": null,
+      "createdAt": "2026-06-17T16:23:42.119Z"
     }
   ],
   "tapeEditions": [
@@ -428,6 +445,82 @@
       ],
       "isCurrent": false,
       "createdAt": "2026-06-17T16:03:09.404Z"
+    },
+    {
+      "id": "edition_mqia633b_otc137",
+      "tuneId": "tune_mqia633b_an5cr7",
+      "version": 1,
+      "source": "initial",
+      "sourceEditionId": null,
+      "description": "初始版次",
+      "sectionsSnapshot": [
+        {
+          "id": "section_mqia6dvi_js5igu",
+          "tuneId": "tune_mqia633b_an5cr7",
+          "startBeat": 1,
+          "endBeat": 50,
+          "laneRange": "1-10",
+          "checked": false,
+          "note": "v1-A段已修改为1-50",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T16:23:56.094Z"
+          }
+        },
+        {
+          "id": "section_mqia6dvp_k92m1h",
+          "tuneId": "tune_mqia633b_an5cr7",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "v1-B段",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T16:23:56.101Z"
+          }
+        }
+      ],
+      "isCurrent": false,
+      "createdAt": "2026-06-17T16:23:42.119Z"
+    },
+    {
+      "id": "edition_mqia6pzs_0vyt2m",
+      "tuneId": "tune_mqia633b_an5cr7",
+      "version": 2,
+      "source": "copy_current",
+      "sourceEditionId": null,
+      "description": "v2修改拍点新增区间",
+      "sectionsSnapshot": [
+        {
+          "id": "section_mqia6dvi_js5igu",
+          "tuneId": "tune_mqia633b_an5cr7",
+          "startBeat": 1,
+          "endBeat": 50,
+          "laneRange": "1-10",
+          "checked": false,
+          "note": "v1-A段已修改为1-50",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T16:23:56.094Z"
+          }
+        },
+        {
+          "id": "section_mqia6dvp_k92m1h",
+          "tuneId": "tune_mqia633b_an5cr7",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "v1-B段",
+          "conflicts": {
+            "warnings": [],
+            "lastCheckedAt": "2026-06-17T16:23:56.101Z"
+          }
+        }
+      ],
+      "isCurrent": true,
+      "createdAt": "2026-06-17T16:24:11.800Z"
     }
   ],
   "sections": [
@@ -607,6 +700,32 @@
           }
         ],
         "lastCheckedAt": "2026-06-17T04:45:44.056Z"
+      }
+    },
+    {
+      "id": "section_mqia6dvi_js5igu",
+      "tuneId": "tune_mqia633b_an5cr7",
+      "startBeat": 1,
+      "endBeat": 50,
+      "laneRange": "1-10",
+      "checked": false,
+      "note": "v1-A段已修改为1-50",
+      "conflicts": {
+        "warnings": [],
+        "lastCheckedAt": "2026-06-17T16:23:56.094Z"
+      }
+    },
+    {
+      "id": "section_mqia6dvp_k92m1h",
+      "tuneId": "tune_mqia633b_an5cr7",
+      "startBeat": 33,
+      "endBeat": 64,
+      "laneRange": "4-18",
+      "checked": false,
+      "note": "v1-B段",
+      "conflicts": {
+        "warnings": [],
+        "lastCheckedAt": "2026-06-17T16:23:56.101Z"
       }
     }
   ],
@@ -1065,6 +1184,78 @@
       "claimedAt": null,
       "completedAt": null,
       "note": "区间 70-96 待打孔",
+      "originalAssignee": null,
+      "transferHistory": [],
+      "lastTransferredAt": null,
+      "lastTransferNote": null,
+      "dueAt": null
+    },
+    {
+      "id": "task_mqia6dvx_skbowe",
+      "tuneId": "tune_mqia633b_an5cr7",
+      "sectionId": "section_mqia6dvi_js5igu",
+      "editionId": "edition_mqia633b_otc137",
+      "priority": "medium",
+      "assignee": null,
+      "status": "pending",
+      "createdAt": "2026-06-17T16:23:56.108Z",
+      "claimedAt": null,
+      "completedAt": null,
+      "note": "v1-A段",
+      "originalAssignee": null,
+      "transferHistory": [],
+      "lastTransferredAt": null,
+      "lastTransferNote": null,
+      "dueAt": null
+    },
+    {
+      "id": "task_mqia6dvx_gtekkl",
+      "tuneId": "tune_mqia633b_an5cr7",
+      "sectionId": "section_mqia6dvp_k92m1h",
+      "editionId": "edition_mqia633b_otc137",
+      "priority": "medium",
+      "assignee": null,
+      "status": "pending",
+      "createdAt": "2026-06-17T16:23:56.108Z",
+      "claimedAt": null,
+      "completedAt": null,
+      "note": "v1-B段",
+      "originalAssignee": null,
+      "transferHistory": [],
+      "lastTransferredAt": null,
+      "lastTransferNote": null,
+      "dueAt": null
+    },
+    {
+      "id": "task_mqia7aqw_mktoay",
+      "tuneId": "tune_mqia633b_an5cr7",
+      "sectionId": "section_mqia6dvi_js5igu",
+      "editionId": "edition_mqia6pzs_0vyt2m",
+      "priority": "medium",
+      "assignee": null,
+      "status": "pending",
+      "createdAt": "2026-06-17T16:24:38.696Z",
+      "claimedAt": null,
+      "completedAt": null,
+      "note": "v1-A段已修改为1-50",
+      "originalAssignee": null,
+      "transferHistory": [],
+      "lastTransferredAt": null,
+      "lastTransferNote": null,
+      "dueAt": null
+    },
+    {
+      "id": "task_mqia7aqw_ng0fyu",
+      "tuneId": "tune_mqia633b_an5cr7",
+      "sectionId": "section_mqia6dvp_k92m1h",
+      "editionId": "edition_mqia6pzs_0vyt2m",
+      "priority": "medium",
+      "assignee": null,
+      "status": "pending",
+      "createdAt": "2026-06-17T16:24:38.696Z",
+      "claimedAt": null,
+      "completedAt": null,
+      "note": "v1-B段",
       "originalAssignee": null,
       "transferHistory": [],
       "lastTransferredAt": null,
