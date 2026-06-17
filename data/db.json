@@ -61,6 +61,33 @@
           "laneRange": "4-18",
           "checked": false,
           "note": "副歌段等待校对"
+        },
+        {
+          "id": "section_mqhl8hrs_o5a55s",
+          "tuneId": "tune_demo",
+          "startBeat": 70,
+          "endBeat": 96,
+          "laneRange": "1-10",
+          "checked": false,
+          "note": "",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-17T04:45:44.056Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-17T04:45:44.056Z"
+          }
         }
       ],
       "isCurrent": true,
@@ -151,6 +178,33 @@
       "laneRange": "2-16",
       "checked": false,
       "note": "副歌段待校对"
+    },
+    {
+      "id": "section_mqhl8hrs_o5a55s",
+      "tuneId": "tune_demo",
+      "startBeat": 70,
+      "endBeat": 96,
+      "laneRange": "1-10",
+      "checked": false,
+      "note": "",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-17T04:45:44.056Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-17T04:45:44.056Z"
+      }
     }
   ],
   "issues": [
@@ -217,6 +271,36 @@
       "fixDescription": "已修正第72拍第5轨孔位",
       "fixTime": "2026-06-17T04:20:05.843Z",
       "reviewNote": "试奏确认音高正确"
+    },
+    {
+      "id": "issue_mqhl92qk_xjo9mv",
+      "tuneId": "tune_demo",
+      "editionId": "edition_demo_init",
+      "sectionId": "section_demo_1",
+      "type": "漏孔",
+      "beat": 200,
+      "lane": 5,
+      "description": "第200拍第5轨",
+      "status": "open",
+      "createdAt": "2026-06-17T04:46:11.228Z",
+      "resolvedAt": null,
+      "fixDescription": null,
+      "fixTime": null,
+      "reviewNote": null,
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "issue_beat_out_of_sections",
+            "severity": "warning",
+            "message": "问题拍点 200 不在任何已定义的区间范围内",
+            "details": {
+              "beat": 200
+            },
+            "detectedAt": "2026-06-17T04:46:11.228Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-17T04:46:11.228Z"
+      }
     }
   ],
   "playSessions": [],

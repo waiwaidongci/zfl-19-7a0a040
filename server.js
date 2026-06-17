@@ -185,6 +185,7 @@ const routes = [
   "POST /tunes",
   "GET /tunes/:id",
   "GET /tunes/:id/progress",
+  "GET /tunes/:id/conflicts",
   "GET /tunes/:id/sections",
   "POST /tunes/:id/sections",
   "POST /tunes/:id/sections/batch",
@@ -540,6 +541,339 @@ function isSameSection(section1, section2) {
   );
 }
 
+function parseLaneRange(laneRange) {
+  const match = laneRange.match(/^(\d+)-(\d+)$/);
+  if (!match) return null;
+  return { startLane: Number(match[1]), endLane: Number(match[2]) };
+}
+
+function parseScale(scale) {
+  const match = String(scale).match(/(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+function buildConflict(type, severity, message, details = {}) {
+  return { type, severity, message, details, detectedAt: new Date().toISOString() };
+}
+
+function detectLaneRangeOutOfScale(section, maxLanes) {
+  const lanes = parseLaneRange(section.laneRange);
+  if (!lanes || !maxLanes) return null;
+  if (lanes.startLane < 1 || lanes.endLane > maxLanes) {
+    return buildConflict(
+      "lane_range_out_of_scale",
+      "error",
+      `音轨范围 ${section.laneRange} 超出纸带规格 ${maxLanes} 音的能力范围`,
+      {
+        sectionId: section.id,
+        laneRange: section.laneRange,
+        startLane: lanes.startLane,
+        endLane: lanes.endLane,
+        maxLanes
+      }
+    );
+  }
+  return null;
+}
+
+function detectBeatGap(sections) {
+  const conflicts = [];
+  const sorted = [...sections].sort((a, b) => a.startBeat - b.startBeat);
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const current = sorted[i];
+    const next = sorted[i + 1];
+    if (current.endBeat + 1 < next.startBeat) {
+      conflicts.push(
+        buildConflict(
+          "beat_gap",
+          "warning",
+          `区间 ${current.startBeat}-${current.endBeat} 与下一区间 ${next.startBeat}-${next.endBeat} 之间存在拍点断裂`,
+          {
+            sectionId: current.id,
+            nextSectionId: next.id,
+            gapStart: current.endBeat + 1,
+            gapEnd: next.startBeat - 1,
+            gapSize: next.startBeat - current.endBeat - 1
+          }
+        )
+      );
+    }
+  }
+  return conflicts;
+}
+
+function detectSectionOverlap(section1, section2) {
+  if (section1.id && section2.id && section1.id === section2.id) return null;
+  const hasOverlap = checkOverlap(section1, section2);
+  if (hasOverlap) {
+    const lanes1 = parseLaneRange(section1.laneRange);
+    const lanes2 = parseLaneRange(section2.laneRange);
+    const laneOverlap = lanes1 && lanes2 &&
+      !(lanes1.endLane < lanes2.startLane || lanes2.endLane < lanes1.startLane);
+    return buildConflict(
+      "section_overlap",
+      "error",
+      `区间 ${section1.startBeat}-${section1.endBeat}(${section1.laneRange}) 与区间 ${section2.startBeat}-${section2.endBeat}(${section2.laneRange}) 存在${laneOverlap ? "完全" : "拍点"}重叠`,
+      {
+        section1: {
+          id: section1.id,
+          startBeat: section1.startBeat,
+          endBeat: section1.endBeat,
+          laneRange: section1.laneRange
+        },
+        section2: {
+          id: section2.id,
+          startBeat: section2.startBeat,
+          endBeat: section2.endBeat,
+          laneRange: section2.laneRange
+        },
+        laneOverlap
+      }
+    );
+  }
+  return null;
+}
+
+function detectDuplicateIssue(newIssue, existingIssues) {
+  if (newIssue.beat === null || newIssue.beat === undefined ||
+      newIssue.lane === null || newIssue.lane === undefined) {
+    return null;
+  }
+  const unresolvedStatuses = ["open", "fixed", "reopened"];
+  const duplicates = existingIssues.filter(issue => {
+    if (issue.id === newIssue.id) return false;
+    if (!unresolvedStatuses.includes(issue.status)) return false;
+    return issue.beat === newIssue.beat && issue.lane === newIssue.lane;
+  });
+  if (duplicates.length > 0) {
+    return buildConflict(
+      "duplicate_issue",
+      "error",
+      `第 ${newIssue.beat} 拍第 ${newIssue.lane} 轨已存在 ${duplicates.length} 个未解决问题`,
+      {
+        beat: newIssue.beat,
+        lane: newIssue.lane,
+        duplicateCount: duplicates.length,
+        duplicateIds: duplicates.map(d => d.id)
+      }
+    );
+  }
+  return null;
+}
+
+function detectAllConflicts(db, tuneId, options = {}) {
+  const tune = findTune(db, tuneId);
+  const maxLanes = parseScale(tune.stripSpec.scale);
+  const edition = resolveTuneEdition(db, tuneId, null);
+  const sections = edition
+    ? edition.sectionsSnapshot
+    : db.sections.filter(s => s.tuneId === tuneId);
+  const issues = db.issues.filter(issue =>
+    issue.tuneId === tuneId &&
+    (!edition || issue.editionId === edition.id)
+  );
+
+  const errors = [];
+  const warnings = [];
+
+  const addConflict = (conflict) => {
+    if (!conflict) return;
+    if (conflict.severity === "error") {
+      errors.push(conflict);
+    } else {
+      warnings.push(conflict);
+    }
+  };
+
+  if (!options.skipLaneRangeCheck) {
+    for (const section of sections) {
+      addConflict(detectLaneRangeOutOfScale(section, maxLanes));
+    }
+  }
+
+  if (!options.skipBeatGapCheck && sections.length > 1) {
+    for (const gap of detectBeatGap(sections)) {
+      addConflict(gap);
+    }
+  }
+
+  if (!options.skipOverlapCheck) {
+    for (let i = 0; i < sections.length; i++) {
+      for (let j = i + 1; j < sections.length; j++) {
+        addConflict(detectSectionOverlap(sections[i], sections[j]));
+      }
+    }
+  }
+
+  if (!options.skipDuplicateIssueCheck) {
+    for (let i = 0; i < issues.length; i++) {
+      for (let j = i + 1; j < issues.length; j++) {
+        addConflict(detectDuplicateIssue(issues[i], [issues[j]]));
+      }
+    }
+  }
+
+  return { errors, warnings };
+}
+
+function detectConflictsForNewSection(db, tuneId, newSection) {
+  const tune = findTune(db, tuneId);
+  const maxLanes = parseScale(tune.stripSpec.scale);
+  const edition = resolveTuneEdition(db, tuneId, null);
+  const existingSections = edition
+    ? edition.sectionsSnapshot
+    : db.sections.filter(s => s.tuneId === tuneId);
+
+  const errors = [];
+  const warnings = [];
+
+  const addConflict = (conflict) => {
+    if (!conflict) return;
+    if (conflict.severity === "error") {
+      errors.push(conflict);
+    } else {
+      warnings.push(conflict);
+    }
+  };
+
+  addConflict(detectLaneRangeOutOfScale(newSection, maxLanes));
+
+  for (const existing of existingSections) {
+    addConflict(detectSectionOverlap(newSection, existing));
+  }
+
+  const allSections = [...existingSections, newSection];
+  for (const gap of detectBeatGap(allSections)) {
+    addConflict(gap);
+  }
+
+  return { errors, warnings };
+}
+
+function detectConflictsForBatchSections(db, tuneId, newSections) {
+  const tune = findTune(db, tuneId);
+  const maxLanes = parseScale(tune.stripSpec.scale);
+  const edition = resolveTuneEdition(db, tuneId, null);
+  const existingSections = edition
+    ? edition.sectionsSnapshot
+    : db.sections.filter(s => s.tuneId === tuneId);
+
+  const errors = [];
+  const warnings = [];
+
+  const addConflict = (conflict) => {
+    if (!conflict) return;
+    if (conflict.severity === "error") {
+      errors.push(conflict);
+    } else {
+      warnings.push(conflict);
+    }
+  };
+
+  for (const section of newSections) {
+    addConflict(detectLaneRangeOutOfScale(section, maxLanes));
+  }
+
+  const allSections = [...existingSections];
+  for (let i = 0; i < newSections.length; i++) {
+    const newS = newSections[i];
+    for (const existing of existingSections) {
+      addConflict(detectSectionOverlap(newS, existing));
+    }
+    for (let j = 0; j < i; j++) {
+      addConflict(detectSectionOverlap(newS, newSections[j]));
+    }
+    allSections.push(newS);
+  }
+
+  for (const gap of detectBeatGap(allSections)) {
+    addConflict(gap);
+  }
+
+  return { errors, warnings };
+}
+
+function detectConflictsForNewIssue(db, tuneId, newIssue) {
+  const edition = resolveTuneEdition(db, tuneId, newIssue.editionId || null);
+  const existingIssues = db.issues.filter(issue =>
+    issue.tuneId === tuneId &&
+    (!edition || issue.editionId === edition.id)
+  );
+
+  const errors = [];
+  const warnings = [];
+
+  const addConflict = (conflict) => {
+    if (!conflict) return;
+    if (conflict.severity === "error") {
+      errors.push(conflict);
+    } else {
+      warnings.push(conflict);
+    }
+  };
+
+  if (newIssue.beat !== null && newIssue.beat !== undefined &&
+      newIssue.lane !== null && newIssue.lane !== undefined) {
+    const tune = findTune(db, tuneId);
+    const maxLanes = parseScale(tune.stripSpec.scale);
+    if (maxLanes && (newIssue.lane < 1 || newIssue.lane > maxLanes)) {
+      addConflict(
+        buildConflict(
+          "issue_lane_out_of_scale",
+          "error",
+          `问题音轨 ${newIssue.lane} 超出纸带规格 ${maxLanes} 音的能力范围`,
+          { lane: newIssue.lane, maxLanes }
+        )
+      );
+    }
+
+    const sections = edition
+      ? edition.sectionsSnapshot
+      : db.sections.filter(s => s.tuneId === tuneId);
+    const inSection = sections.some(s =>
+      newIssue.beat >= s.startBeat && newIssue.beat <= s.endBeat
+    );
+    if (!inSection) {
+      addConflict(
+        buildConflict(
+          "issue_beat_out_of_sections",
+          "warning",
+          `问题拍点 ${newIssue.beat} 不在任何已定义的区间范围内`,
+          { beat: newIssue.beat }
+        )
+      );
+    }
+  }
+
+  addConflict(detectDuplicateIssue(newIssue, existingIssues));
+
+  return { errors, warnings };
+}
+
+function countConflicts(db, tuneId) {
+  const { errors, warnings } = detectAllConflicts(db, tuneId);
+  const allConflicts = [...errors, ...warnings];
+  const byType = {
+    lane_range_out_of_scale: 0,
+    beat_gap: 0,
+    section_overlap: 0,
+    duplicate_issue: 0,
+    issue_lane_out_of_scale: 0,
+    issue_beat_out_of_sections: 0
+  };
+  for (const conflict of allConflicts) {
+    if (byType[conflict.type] !== undefined) {
+      byType[conflict.type]++;
+    }
+  }
+  return {
+    totalConflicts: errors.length + warnings.length,
+    errorCount: errors.length,
+    warningCount: warnings.length,
+    byType
+  };
+}
+
 function buildProgress(db, tuneId) {
   findTune(db, tuneId);
   const edition = resolveTuneEdition(db, tuneId, null);
@@ -562,6 +896,7 @@ function buildProgress(db, tuneId) {
       return !latest || t > latest ? t : latest;
     }, null);
   }
+  const conflicts = countConflicts(db, tuneId);
   return {
     tuneId,
     totalSections: sections.length,
@@ -570,7 +905,8 @@ function buildProgress(db, tuneId) {
     openIssues,
     resolvedIssues,
     percent: sections.length ? Math.round((checkedCount / sections.length) * 100) : 0,
-    lastPlayedAt
+    lastPlayedAt,
+    conflicts
   };
 }
 
@@ -815,6 +1151,22 @@ async function handle(req, res) {
       checked: Boolean(body.checked),
       note: body.note || ""
     };
+
+    const conflicts = detectConflictsForNewSection(db, tuneId, section);
+
+    if (conflicts.errors.length > 0) {
+      return send(res, 409, {
+        error: "存在严重冲突，无法保存",
+        conflicts: conflicts.errors,
+        warnings: conflicts.warnings
+      });
+    }
+
+    section.conflicts = {
+      warnings: conflicts.warnings,
+      lastCheckedAt: new Date().toISOString()
+    };
+
     db.sections.push(section);
 
     if (tune.currentEditionId) {
@@ -825,7 +1177,14 @@ async function handle(req, res) {
     }
 
     await writeDb(db);
-    return send(res, 201, { data: section });
+
+    const progress = buildProgress(db, tuneId);
+
+    return send(res, 201, {
+      data: section,
+      warnings: conflicts.warnings,
+      progress
+    });
   }
 
   const batchSectionsMatch = pathname.match(/^\/tunes\/([^/]+)\/sections\/batch$/);
@@ -933,17 +1292,37 @@ async function handle(req, res) {
       });
     }
 
+    const tempSections = validSections.map(vs => ({
+      id: makeId("section"),
+      tuneId,
+      startBeat: vs.startBeat,
+      endBeat: vs.endBeat,
+      laneRange: vs.laneRange,
+      checked: vs.checked,
+      note: vs.note
+    }));
+
+    const conflicts = detectConflictsForBatchSections(db, tuneId, tempSections);
+
+    if (conflicts.errors.length > 0) {
+      return send(res, 409, {
+        error: "存在严重冲突，无法保存",
+        conflicts: conflicts.errors,
+        warnings: conflicts.warnings,
+        skippedDuplicates
+      });
+    }
+
     const createdSections = [];
-    for (const vs of validSections) {
-      const section = {
-        id: makeId("section"),
-        tuneId,
-        startBeat: vs.startBeat,
-        endBeat: vs.endBeat,
-        laneRange: vs.laneRange,
-        checked: vs.checked,
-        note: vs.note
+    const warningsBySection = {};
+    for (let i = 0; i < tempSections.length; i++) {
+      const section = tempSections[i];
+      const sectionConflicts = detectConflictsForNewSection(db, tuneId, section);
+      section.conflicts = {
+        warnings: sectionConflicts.warnings,
+        lastCheckedAt: new Date().toISOString()
       };
+      warningsBySection[section.id] = sectionConflicts.warnings;
       db.sections.push(section);
       createdSections.push(section);
     }
@@ -964,6 +1343,8 @@ async function handle(req, res) {
     return send(res, 201, {
       addedCount: createdSections.length,
       skippedDuplicates,
+      warnings: conflicts.warnings,
+      warningsBySection,
       progress,
       data: createdSections
     });
@@ -983,6 +1364,23 @@ async function handle(req, res) {
   const progressMatch = pathname.match(/^\/tunes\/([^/]+)\/progress$/);
   if (progressMatch && req.method === "GET") {
     return send(res, 200, { data: buildProgress(db, progressMatch[1]) });
+  }
+
+  const conflictsMatch = pathname.match(/^\/tunes\/([^/]+)\/conflicts$/);
+  if (conflictsMatch && req.method === "GET") {
+    const tuneId = conflictsMatch[1];
+    findTune(db, tuneId);
+    const conflicts = detectAllConflicts(db, tuneId);
+    const counts = countConflicts(db, tuneId);
+    return send(res, 200, {
+      data: {
+        tuneId,
+        ...counts,
+        errors: conflicts.errors,
+        warnings: conflicts.warnings,
+        detectedAt: new Date().toISOString()
+      }
+    });
   }
 
   const checkMatch = pathname.match(/^\/sections\/([^/]+)\/check$/);
@@ -1062,9 +1460,32 @@ async function handle(req, res) {
       fixTime: null,
       reviewNote: null
     };
+
+    const conflicts = detectConflictsForNewIssue(db, body.tuneId, issue);
+
+    if (conflicts.errors.length > 0) {
+      return send(res, 409, {
+        error: "存在严重冲突，无法保存",
+        conflicts: conflicts.errors,
+        warnings: conflicts.warnings
+      });
+    }
+
+    issue.conflicts = {
+      warnings: conflicts.warnings,
+      lastCheckedAt: new Date().toISOString()
+    };
+
     db.issues.push(issue);
     await writeDb(db);
-    return send(res, 201, { data: issue });
+
+    const progress = buildProgress(db, body.tuneId);
+
+    return send(res, 201, {
+      data: issue,
+      warnings: conflicts.warnings,
+      progress
+    });
   }
 
   const issueStatusMatch = pathname.match(/^\/issues\/([^/]+)\/status$/);
