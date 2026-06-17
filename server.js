@@ -1720,7 +1720,10 @@ function detectConflictsForBatchSections(db, tuneId, newSections) {
 }
 
 function validateBatchSections(db, tuneId, items) {
-  const existingSections = db.sections.filter((s) => s.tuneId === tuneId);
+  const edition = resolveTuneEdition(db, tuneId, null);
+  const existingSections = edition
+    ? edition.sectionsSnapshot
+    : db.sections.filter((s) => s.tuneId === tuneId);
   const rowResults = [];
   const validSections = [];
   const duplicateRows = [];
@@ -1816,57 +1819,96 @@ function validateBatchSections(db, tuneId, items) {
 
   const batchConflicts = detectConflictsForBatchSections(db, tuneId, tempSections);
 
+  const tempSectionToOrigIndex = [];
+  let tempSectionCursor = 0;
+  for (let i = 0; i < items.length; i++) {
+    const skipped = fieldErrorRows.includes(i) || duplicateRows.includes(i);
+    if (!skipped) {
+      tempSectionToOrigIndex[tempSectionCursor] = i;
+      tempSectionCursor++;
+    }
+  }
+
+  const tempSectionIdToIdx = {};
+  for (let i = 0; i < tempSections.length; i++) {
+    tempSectionIdToIdx[tempSections[i].id] = i;
+  }
+
+  const resolveSectionIdx = (conflict) => {
+    if (conflict.details?.section1?.id) {
+      return tempSectionIdToIdx[conflict.details.section1.id] ?? -1;
+    }
+    if (conflict.details?.sectionId) {
+      return tempSectionIdToIdx[conflict.details.sectionId] ?? -1;
+    }
+    return -1;
+  };
+
   const conflictMap = {};
   for (const err of batchConflicts.errors) {
-    const sectionIdx = tempSections.findIndex(s =>
-      s.startBeat === err.section1?.startBeat &&
-      s.endBeat === err.section1?.endBeat &&
-      s.laneRange === err.section1?.laneRange
-    );
-    if (sectionIdx !== -1) {
-      if (!conflictMap[sectionIdx]) conflictMap[sectionIdx] = { errors: [], warnings: [] };
-      conflictMap[sectionIdx].errors.push(err);
+    const affectedIdxes = new Set();
+    affectedIdxes.add(resolveSectionIdx(err));
+    if (err.details?.section2?.id) {
+      const idx2 = tempSectionIdToIdx[err.details.section2.id] ?? -1;
+      if (idx2 !== -1) affectedIdxes.add(idx2);
+    }
+    if (err.details?.nextSectionId) {
+      const idxNext = tempSectionIdToIdx[err.details.nextSectionId] ?? -1;
+      if (idxNext !== -1) affectedIdxes.add(idxNext);
+    }
+    for (const idx of affectedIdxes) {
+      if (idx !== -1) {
+        if (!conflictMap[idx]) conflictMap[idx] = { errors: [], warnings: [] };
+        conflictMap[idx].errors.push(err);
+      }
     }
   }
   for (const warn of batchConflicts.warnings) {
-    const sectionIdx = tempSections.findIndex(s =>
-      s.startBeat === warn.section1?.startBeat &&
-      s.endBeat === warn.section1?.endBeat &&
-      s.laneRange === warn.section1?.laneRange
-    );
-    if (sectionIdx !== -1) {
-      if (!conflictMap[sectionIdx]) conflictMap[sectionIdx] = { errors: [], warnings: [] };
-      conflictMap[sectionIdx].warnings.push(warn);
+    const affectedIdxes = new Set();
+    affectedIdxes.add(resolveSectionIdx(warn));
+    if (warn.details?.section2?.id) {
+      const idx2 = tempSectionIdToIdx[warn.details.section2.id] ?? -1;
+      if (idx2 !== -1) affectedIdxes.add(idx2);
+    }
+    if (warn.details?.nextSectionId) {
+      const idxNext = tempSectionIdToIdx[warn.details.nextSectionId] ?? -1;
+      if (idxNext !== -1) affectedIdxes.add(idxNext);
+    }
+    for (const idx of affectedIdxes) {
+      if (idx !== -1) {
+        if (!conflictMap[idx]) conflictMap[idx] = { errors: [], warnings: [] };
+        conflictMap[idx].warnings.push(warn);
+      }
     }
   }
 
-  let validIdx = 0;
-  for (let i = 0; i < items.length; i++) {
-    const existing = rowResults.find(r => r.index === i);
-    if (existing) continue;
-
-    const cm = conflictMap[validIdx] || { errors: [], warnings: [] };
+  const saveableRowIndexes = [];
+  for (let tempIdx = 0; tempIdx < tempSections.length; tempIdx++) {
+    const origIdx = tempSectionToOrigIndex[tempIdx];
+    const cm = conflictMap[tempIdx] || { errors: [], warnings: [] };
     const status = cm.errors.length > 0 ? "conflict_error" : "ok";
 
     if (status === "conflict_error") {
-      conflictErrorRows.push(i);
+      conflictErrorRows.push(origIdx);
+    } else {
+      saveableRowIndexes.push(origIdx);
     }
 
     rowResults.push({
-      index: i,
+      index: origIdx,
       status,
-      data: items[i],
-      startBeat: tempSections[validIdx].startBeat,
-      endBeat: tempSections[validIdx].endBeat,
-      laneRange: tempSections[validIdx].laneRange,
+      data: items[origIdx],
+      startBeat: tempSections[tempIdx].startBeat,
+      endBeat: tempSections[tempIdx].endBeat,
+      laneRange: tempSections[tempIdx].laneRange,
       fieldErrors: [],
       conflicts: cm.errors,
       warnings: cm.warnings
     });
-    validIdx++;
   }
 
   rowResults.sort((a, b) => a.index - b.index);
+  conflictErrorRows.sort((a, b) => a - b);
 
   const saveableSections = tempSections.filter((_, idx) => {
     const cm = conflictMap[idx];
@@ -1881,6 +1923,7 @@ function validateBatchSections(db, tuneId, items) {
     fieldErrorRows,
     conflictErrorRows,
     saveableSections,
+    saveableRowIndexes,
     tempSections,
     batchConflicts,
     hasSevereConflicts,
@@ -2473,6 +2516,8 @@ async function handle(req, res) {
         duplicateRows: validation.duplicateRows,
         fieldErrorRows: validation.fieldErrorRows,
         conflictErrorRows: validation.conflictErrorRows,
+        saveableRowIndexes: validation.saveableRowIndexes,
+        saveableSections: validation.saveableSections,
         saveableCount: validation.summary.saveableCount
       });
     }
