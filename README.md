@@ -72,6 +72,28 @@ PORT=3019 node server.js
 | `issueDiff.resolvedIssues` | 从基准到目标已解决问题清单 |
 | `issueDiff.summary` | 问题变化统计 |
 
+**从复制版次到查看差异再设为当前版次示例**：
+
+```bash
+# 1. 基于当前曲目的v1版次复制出一个新版本，但先不设为当前版次
+NEW_EDITION=$(curl -s -X POST http://127.0.0.1:3019/tunes/tune_demo/editions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "sourceEditionId": "edition_demo_init",
+    "description": "v2校对修改版",
+    "setAsCurrent": false
+  }')
+NEW_EDITION_ID=$(echo "$NEW_EDITION" | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# 2. 对比基准版次和新复制版次，查看区间变化与关联问题差异
+curl -s http://127.0.0.1:3019/tunes/tune_demo/editions/edition_demo_init/compare/$NEW_EDITION_ID \
+  | python3 -m json.tool
+
+# 3. 差异确认后，将新版本设为当前版次并同步覆盖实时区间
+curl -s -X PATCH http://127.0.0.1:3019/tunes/tune_demo/editions/$NEW_EDITION_ID/current \
+  | python3 -m json.tool
+```
+
 ### 纸带校对报告
 - `GET /tunes/:id/report`（按当前实时数据生成校对报告，不持久化）
 - `POST /tunes/:id/report/snapshot`（将当前实时报告保存为历史快照，可选 `label` 标记）
@@ -565,5 +587,4 @@ curl -s -X POST http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshot \
 # 13. 查看所有快照，按时间倒序排列
 echo "===== 全部快照 ====="
 curl -s http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshots | python3 -m json.tool
-```
 ```
