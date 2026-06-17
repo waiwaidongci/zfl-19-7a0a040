@@ -1719,6 +1719,183 @@ function detectConflictsForBatchSections(db, tuneId, newSections) {
   return { errors, warnings };
 }
 
+function validateBatchSections(db, tuneId, items) {
+  const existingSections = db.sections.filter((s) => s.tuneId === tuneId);
+  const rowResults = [];
+  const validSections = [];
+  const duplicateRows = [];
+  const fieldErrorRows = [];
+  const conflictErrorRows = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const fieldErrors = [];
+
+    if (item.startBeat === undefined || item.startBeat === "") {
+      fieldErrors.push("缺少字段：startBeat");
+    } else if (isNaN(Number(item.startBeat))) {
+      fieldErrors.push("startBeat 必须是数字");
+    }
+
+    if (item.endBeat === undefined || item.endBeat === "") {
+      fieldErrors.push("缺少字段：endBeat");
+    } else if (isNaN(Number(item.endBeat))) {
+      fieldErrors.push("endBeat 必须是数字");
+    }
+
+    if (item.laneRange === undefined || item.laneRange === "") {
+      fieldErrors.push("缺少字段：laneRange");
+    } else if (!validateLaneRange(item.laneRange)) {
+      fieldErrors.push("laneRange 格式无效，应为类似 \"1-10\" 的格式");
+    }
+
+    const hasValidBeats = !isNaN(Number(item.startBeat)) && !isNaN(Number(item.endBeat)) &&
+      item.startBeat !== undefined && item.startBeat !== "" &&
+      item.endBeat !== undefined && item.endBeat !== "";
+
+    if (hasValidBeats) {
+      const startBeat = Number(item.startBeat);
+      const endBeat = Number(item.endBeat);
+      if (endBeat < startBeat) {
+        fieldErrors.push("endBeat 不能小于 startBeat");
+      }
+    }
+
+    if (fieldErrors.length > 0) {
+      rowResults.push({
+        index: i,
+        status: "field_error",
+        data: item,
+        fieldErrors,
+        conflicts: [],
+        warnings: []
+      });
+      fieldErrorRows.push(i);
+      continue;
+    }
+
+    const startBeat = Number(item.startBeat);
+    const endBeat = Number(item.endBeat);
+    const tempSection = { startBeat, endBeat, laneRange: item.laneRange };
+
+    const isDuplicate = existingSections.some((s) => isSameSection(s, tempSection)) ||
+      validSections.some((s) => isSameSection(s, tempSection));
+
+    if (isDuplicate) {
+      rowResults.push({
+        index: i,
+        status: "duplicate",
+        data: item,
+        startBeat,
+        endBeat,
+        laneRange: item.laneRange,
+        fieldErrors: [],
+        conflicts: [],
+        warnings: []
+      });
+      duplicateRows.push(i);
+      continue;
+    }
+
+    validSections.push({
+      ...tempSection,
+      checked: Boolean(item.checked),
+      note: item.note || ""
+    });
+  }
+
+  const tempSections = validSections.map(vs => ({
+    id: makeId("section"),
+    tuneId,
+    startBeat: vs.startBeat,
+    endBeat: vs.endBeat,
+    laneRange: vs.laneRange,
+    checked: vs.checked,
+    note: vs.note
+  }));
+
+  const batchConflicts = detectConflictsForBatchSections(db, tuneId, tempSections);
+
+  const conflictMap = {};
+  for (const err of batchConflicts.errors) {
+    const sectionIdx = tempSections.findIndex(s =>
+      s.startBeat === err.section1?.startBeat &&
+      s.endBeat === err.section1?.endBeat &&
+      s.laneRange === err.section1?.laneRange
+    );
+    if (sectionIdx !== -1) {
+      if (!conflictMap[sectionIdx]) conflictMap[sectionIdx] = { errors: [], warnings: [] };
+      conflictMap[sectionIdx].errors.push(err);
+    }
+  }
+  for (const warn of batchConflicts.warnings) {
+    const sectionIdx = tempSections.findIndex(s =>
+      s.startBeat === warn.section1?.startBeat &&
+      s.endBeat === warn.section1?.endBeat &&
+      s.laneRange === warn.section1?.laneRange
+    );
+    if (sectionIdx !== -1) {
+      if (!conflictMap[sectionIdx]) conflictMap[sectionIdx] = { errors: [], warnings: [] };
+      conflictMap[sectionIdx].warnings.push(warn);
+    }
+  }
+
+  let validIdx = 0;
+  for (let i = 0; i < items.length; i++) {
+    const existing = rowResults.find(r => r.index === i);
+    if (existing) continue;
+
+    const cm = conflictMap[validIdx] || { errors: [], warnings: [] };
+    const status = cm.errors.length > 0 ? "conflict_error" : "ok";
+
+    if (status === "conflict_error") {
+      conflictErrorRows.push(i);
+    }
+
+    rowResults.push({
+      index: i,
+      status,
+      data: items[i],
+      startBeat: tempSections[validIdx].startBeat,
+      endBeat: tempSections[validIdx].endBeat,
+      laneRange: tempSections[validIdx].laneRange,
+      fieldErrors: [],
+      conflicts: cm.errors,
+      warnings: cm.warnings
+    });
+    validIdx++;
+  }
+
+  rowResults.sort((a, b) => a.index - b.index);
+
+  const saveableSections = tempSections.filter((_, idx) => {
+    const cm = conflictMap[idx];
+    return !cm || cm.errors.length === 0;
+  });
+
+  const hasSevereConflicts = batchConflicts.errors.length > 0;
+
+  return {
+    rowResults,
+    duplicateRows,
+    fieldErrorRows,
+    conflictErrorRows,
+    saveableSections,
+    tempSections,
+    batchConflicts,
+    hasSevereConflicts,
+    summary: {
+      totalRows: items.length,
+      okCount: rowResults.filter(r => r.status === "ok").length,
+      fieldErrorCount: fieldErrorRows.length,
+      duplicateCount: duplicateRows.length,
+      conflictErrorCount: conflictErrorRows.length,
+      warningCount: batchConflicts.warnings.length,
+      saveableCount: saveableSections.length
+    }
+  };
+}
+
 function detectConflictsForNewIssue(db, tuneId, newIssue) {
   const edition = resolveTuneEdition(db, tuneId, newIssue.editionId || null);
   const existingIssues = db.issues.filter(issue =>
@@ -2276,6 +2453,7 @@ async function handle(req, res) {
     const tune = findTune(db, tuneId);
     ensureTuneNotArchived(tune);
     const body = await parseBody(req);
+    const dryRun = searchParams.get("dryRun") === "true";
 
     if (!Array.isArray(body)) {
       return send(res, 400, { error: "请求体必须是区间数组" });
@@ -2285,114 +2463,44 @@ async function handle(req, res) {
       return send(res, 400, { error: "区间数组不能为空" });
     }
 
-    const errors = [];
-    const existingSections = db.sections.filter((s) => s.tuneId === tuneId);
-    const validSections = [];
-    const skippedDuplicates = [];
+    const validation = validateBatchSections(db, tuneId, body);
 
-    for (let i = 0; i < body.length; i++) {
-      const item = body[i];
-      const rowErrors = [];
-
-      if (item.startBeat === undefined || item.startBeat === "") {
-        rowErrors.push("缺少字段：startBeat");
-      } else if (isNaN(Number(item.startBeat))) {
-        rowErrors.push("startBeat 必须是数字");
-      }
-
-      if (item.endBeat === undefined || item.endBeat === "") {
-        rowErrors.push("缺少字段：endBeat");
-      } else if (isNaN(Number(item.endBeat))) {
-        rowErrors.push("endBeat 必须是数字");
-      }
-
-      if (item.laneRange === undefined || item.laneRange === "") {
-        rowErrors.push("缺少字段：laneRange");
-      } else if (!validateLaneRange(item.laneRange)) {
-        rowErrors.push("laneRange 格式无效，应为类似 \"1-10\" 的格式");
-      }
-
-      const hasValidBeats = !isNaN(Number(item.startBeat)) && !isNaN(Number(item.endBeat)) &&
-        item.startBeat !== undefined && item.startBeat !== "" &&
-        item.endBeat !== undefined && item.endBeat !== "";
-
-      if (hasValidBeats) {
-        const startBeat = Number(item.startBeat);
-        const endBeat = Number(item.endBeat);
-
-        if (endBeat < startBeat) {
-          rowErrors.push("endBeat 不能小于 startBeat");
-        }
-      }
-
-      if (rowErrors.length === 0) {
-        const startBeat = Number(item.startBeat);
-        const endBeat = Number(item.endBeat);
-        const tempSection = { startBeat, endBeat, laneRange: item.laneRange };
-
-        const isDuplicate = existingSections.some((s) => isSameSection(s, tempSection)) ||
-          validSections.some((s) => isSameSection(s, tempSection));
-
-        if (isDuplicate) {
-          skippedDuplicates.push({
-            index: i,
-            startBeat,
-            endBeat,
-            laneRange: item.laneRange
-          });
-          continue;
-        }
-
-        if (rowErrors.length === 0) {
-          validSections.push({
-            ...tempSection,
-            checked: Boolean(item.checked),
-            note: item.note || ""
-          });
-        }
-      }
-
-      if (rowErrors.length > 0) {
-        errors.push({
-          index: i,
-          data: item,
-          errors: rowErrors
-        });
-      }
-    }
-
-    if (errors.length > 0) {
-      return send(res, 400, {
-        error: "批量导入验证失败",
-        errors
+    if (dryRun) {
+      return send(res, 200, {
+        dryRun: true,
+        rowResults: validation.rowResults,
+        summary: validation.summary,
+        duplicateRows: validation.duplicateRows,
+        fieldErrorRows: validation.fieldErrorRows,
+        conflictErrorRows: validation.conflictErrorRows,
+        saveableCount: validation.summary.saveableCount
       });
     }
 
-    const tempSections = validSections.map(vs => ({
-      id: makeId("section"),
-      tuneId,
-      startBeat: vs.startBeat,
-      endBeat: vs.endBeat,
-      laneRange: vs.laneRange,
-      checked: vs.checked,
-      note: vs.note
-    }));
+    if (validation.fieldErrorRows.length > 0) {
+      return send(res, 400, {
+        error: "批量导入验证失败",
+        errors: validation.rowResults
+          .filter(r => r.status === "field_error")
+          .map(r => ({ index: r.index, data: r.data, errors: r.fieldErrors }))
+      });
+    }
 
-    const conflicts = detectConflictsForBatchSections(db, tuneId, tempSections);
-
-    if (conflicts.errors.length > 0) {
+    if (validation.hasSevereConflicts) {
       return send(res, 409, {
         error: "存在严重冲突，无法保存",
-        conflicts: conflicts.errors,
-        warnings: conflicts.warnings,
-        skippedDuplicates
+        conflicts: validation.batchConflicts.errors,
+        warnings: validation.batchConflicts.warnings,
+        skippedDuplicates: validation.duplicateRows.map(i => {
+          const r = validation.rowResults.find(rr => rr.index === i);
+          return { index: i, startBeat: r.startBeat, endBeat: r.endBeat, laneRange: r.laneRange };
+        })
       });
     }
 
     const createdSections = [];
     const warningsBySection = {};
-    for (let i = 0; i < tempSections.length; i++) {
-      const section = tempSections[i];
+    for (const section of validation.saveableSections) {
       const sectionConflicts = detectConflictsForNewSection(db, tuneId, section);
       section.conflicts = {
         warnings: sectionConflicts.warnings,
@@ -2418,8 +2526,11 @@ async function handle(req, res) {
 
     return send(res, 201, {
       addedCount: createdSections.length,
-      skippedDuplicates,
-      warnings: conflicts.warnings,
+      skippedDuplicates: validation.duplicateRows.map(i => {
+        const r = validation.rowResults.find(rr => rr.index === i);
+        return { index: i, startBeat: r.startBeat, endBeat: r.endBeat, laneRange: r.laneRange };
+      }),
+      warnings: validation.batchConflicts.warnings,
       warningsBySection,
       progress,
       data: createdSections
