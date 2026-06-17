@@ -1260,13 +1260,6 @@ async function handle(req, res) {
           continue;
         }
 
-        const overlapWithExisting = existingSections.some((s) => checkOverlap(s, tempSection));
-        const overlapWithBatch = validSections.some((s) => checkOverlap(s, tempSection));
-
-        if (overlapWithExisting || overlapWithBatch) {
-          rowErrors.push("区间与现有区间或批量导入中的其他区间重叠");
-        }
-
         if (rowErrors.length === 0) {
           validSections.push({
             ...tempSection,
