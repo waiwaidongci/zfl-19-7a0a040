@@ -578,7 +578,11 @@ function buildReport(db, tuneId) {
   const tune = findTune(db, tuneId);
   const edition = resolveTuneEdition(db, tuneId, null);
   const sections = db.sections.filter((item) => item.tuneId === tuneId);
-  const issues = db.issues.filter((item) => item.tuneId === tuneId);
+  const issues = db.issues.filter(
+    (item) =>
+      item.tuneId === tuneId &&
+      (!edition || item.editionId === edition.id)
+  );
 
   const checkedSections = sections.filter((s) => s.checked);
   const uncheckedSections = sections.filter((s) => !s.checked);
