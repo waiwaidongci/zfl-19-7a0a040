@@ -464,10 +464,10 @@ function validateIssueStatusTransition(from, to) {
   const normalizedFrom = normalizeIssueStatus(from);
   const normalizedTo = normalizeIssueStatus(to);
   const validTransitions = {
-    open: ["fixed", "verified"],
+    open: ["fixed"],
     fixed: ["verified", "reopened"],
     verified: ["reopened"],
-    reopened: ["fixed", "verified"]
+    reopened: ["fixed"]
   };
   const allowed = validTransitions[normalizedFrom] || [];
   if (!allowed.includes(normalizedTo)) {
