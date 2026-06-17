@@ -86,7 +86,10 @@ const initialData = {
       description: "第41拍高音孔漏打",
       status: "open",
       createdAt: new Date().toISOString(),
-      resolvedAt: null
+      resolvedAt: null,
+      fixDescription: null,
+      fixTime: null,
+      reviewNote: null
     }
   ],
   playSessions: [],
@@ -238,6 +241,22 @@ async function ensureDb() {
     for (const issue of data.issues || []) {
       if (issue.editionId === undefined) {
         issue.editionId = null;
+        needWrite = true;
+      }
+      if (issue.fixDescription === undefined) {
+        issue.fixDescription = null;
+        needWrite = true;
+      }
+      if (issue.fixTime === undefined) {
+        issue.fixTime = null;
+        needWrite = true;
+      }
+      if (issue.reviewNote === undefined) {
+        issue.reviewNote = null;
+        needWrite = true;
+      }
+      if (issue.status === "resolved") {
+        issue.status = "verified";
         needWrite = true;
       }
     }
@@ -428,6 +447,36 @@ function validateTaskStatus(status) {
   }
 }
 
+function validateIssueStatus(status) {
+  const valid = ["open", "fixed", "verified", "reopened", "resolved"];
+  if (!valid.includes(status)) {
+    const error = new Error(`问题状态必须是：${valid.join("、")}`);
+    error.status = 400;
+    throw error;
+  }
+}
+
+function normalizeIssueStatus(status) {
+  return status === "resolved" ? "verified" : status;
+}
+
+function validateIssueStatusTransition(from, to) {
+  const normalizedFrom = normalizeIssueStatus(from);
+  const normalizedTo = normalizeIssueStatus(to);
+  const validTransitions = {
+    open: ["fixed", "verified"],
+    fixed: ["verified", "reopened"],
+    verified: ["reopened"],
+    reopened: ["fixed", "verified"]
+  };
+  const allowed = validTransitions[normalizedFrom] || [];
+  if (!allowed.includes(normalizedTo)) {
+    const error = new Error(`不允许从 ${from} 状态转为 ${to} 状态`);
+    error.status = 400;
+    throw error;
+  }
+}
+
 function validateStripSpec(spec) {
   if (!spec || typeof spec !== "object") {
     const error = new Error("stripSpec 必须是对象");
@@ -477,7 +526,8 @@ function buildProgress(db, tuneId) {
   );
   const sessions = db.playSessions.filter((item) => item.tuneId === tuneId);
   const checkedCount = sections.filter((item) => item.checked).length;
-  const openIssues = issues.filter((item) => item.status !== "resolved").length;
+  const openIssues = issues.filter((item) => item.status !== "verified").length;
+  const resolvedIssues = issues.filter((item) => item.status === "verified").length;
   let lastPlayedAt = null;
   if (sessions.length) {
     lastPlayedAt = sessions.reduce((latest, s) => {
@@ -491,7 +541,7 @@ function buildProgress(db, tuneId) {
     checkedSections: checkedCount,
     uncheckedSections: sections.length - checkedCount,
     openIssues,
-    resolvedIssues: issues.length - openIssues,
+    resolvedIssues,
     percent: sections.length ? Math.round((checkedCount / sections.length) * 100) : 0,
     lastPlayedAt
   };
@@ -768,9 +818,10 @@ async function handle(req, res) {
     const status = searchParams.get("status");
     const editionId = searchParams.get("editionId");
     const edition = tuneId ? resolveTuneEdition(db, tuneId, editionId) : null;
+    const filterStatus = status ? normalizeIssueStatus(status) : null;
     const issues = db.issues.filter((item) => {
       if (tuneId && item.tuneId !== tuneId) return false;
-      if (status && item.status !== status) return false;
+      if (filterStatus && item.status !== filterStatus) return false;
       if (editionId && item.editionId !== editionId) return false;
       if (!editionId && edition && item.editionId !== edition.id) return false;
       return true;
@@ -808,7 +859,10 @@ async function handle(req, res) {
       description: body.description,
       status: "open",
       createdAt: new Date().toISOString(),
-      resolvedAt: null
+      resolvedAt: null,
+      fixDescription: null,
+      fixTime: null,
+      reviewNote: null
     };
     db.issues.push(issue);
     await writeDb(db);
@@ -821,9 +875,33 @@ async function handle(req, res) {
     if (!issue) return send(res, 404, { error: "问题不存在" });
     const body = await parseBody(req);
     required(body, ["status"]);
-    issue.status = body.status;
-    issue.resolvedAt = body.status === "resolved" ? new Date().toISOString() : null;
+    validateIssueStatus(body.status);
+    validateIssueStatusTransition(issue.status, body.status);
+
+    const newStatus = normalizeIssueStatus(body.status);
+    const now = new Date().toISOString();
+
+    issue.status = newStatus;
+
+    if (newStatus === "fixed") {
+      required(body, ["fixDescription"]);
+      issue.fixDescription = body.fixDescription;
+      issue.fixTime = now;
+    }
+
+    if (newStatus === "verified") {
+      issue.resolvedAt = now;
+      issue.reviewNote = body.reviewNote ?? issue.reviewNote;
+    }
+
+    if (newStatus === "reopened") {
+      required(body, ["reviewNote"]);
+      issue.reviewNote = body.reviewNote;
+      issue.resolvedAt = null;
+    }
+
     issue.note = body.note ?? issue.note;
+
     await writeDb(db);
     return send(res, 200, { data: issue });
   }

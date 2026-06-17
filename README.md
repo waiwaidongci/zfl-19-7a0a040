@@ -69,6 +69,111 @@ curl -X POST http://127.0.0.1:3019/issues \
   -H 'Content-Type: application/json' \
   -d '{"tuneId":"tune_demo","sectionId":"section_demo_2","type":"错孔","beat":45,"lane":9,"description":"第45拍第9轨多打孔"}'
 
+# ---------- 问题复核流程示例 ----------
+
+# 1. 首先创建一个问题（状态初始为 open）
+NEW_ISSUE=$(curl -s -X POST http://127.0.0.1:3019/issues \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "tuneId": "tune_demo",
+    "sectionId": "section_demo_2",
+    "type": "漏孔",
+    "beat": 41,
+    "lane": 12,
+    "description": "第41拍高音孔漏打"
+  }')
+echo "新问题: $NEW_ISSUE"
+ISSUE_ID=$(echo $NEW_ISSUE | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+echo "问题ID: $ISSUE_ID"
+
+# 2. 查看曲目进度（openIssues 应包含此问题）
+echo "===== 修复前进度 ====="
+curl http://127.0.0.1:3019/tunes/tune_demo/progress
+
+# 3. 提交修复（open → fixed，必须填写 fixDescription）
+echo "===== 提交修复 ====="
+curl -s -X PATCH http://127.0.0.1:3019/issues/$ISSUE_ID/status \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "status": "fixed",
+    "fixDescription": "已重新打孔第41拍第12轨高音孔"
+  }' | python3 -m json.tool
+
+# 4. 查看进度（仍算 openIssues，未计入 resolved）
+echo "===== 已修复待复核进度 ====="
+curl http://127.0.0.1:3019/tunes/tune_demo/progress
+
+# 5. 复核通过（fixed → verified，可选填写 reviewNote）
+echo "===== 复核通过 ====="
+curl -s -X PATCH http://127.0.0.1:3019/issues/$ISSUE_ID/status \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "status": "verified",
+    "reviewNote": "试奏确认高音已正确发声"
+  }' | python3 -m json.tool
+
+# 6. 查看进度（openIssues 减少，resolvedIssues 增加）
+echo "===== 复核通过后进度 ====="
+curl http://127.0.0.1:3019/tunes/tune_demo/progress
+
+# ---------- 复核失败重新打开示例 ----------
+
+# 1. 创建另一个问题
+NEW_ISSUE2=$(curl -s -X POST http://127.0.0.1:3019/issues \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "tuneId": "tune_demo",
+    "sectionId": "section_demo_2",
+    "type": "错孔",
+    "beat": 50,
+    "lane": 8,
+    "description": "第50拍第8轨孔位偏移"
+  }')
+ISSUE_ID2=$(echo $NEW_ISSUE2 | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# 2. 提交修复
+curl -s -X PATCH http://127.0.0.1:3019/issues/$ISSUE_ID2/status \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "status": "fixed",
+    "fixDescription": "已调整打孔位置"
+  }' > /dev/null
+
+# 3. 复核失败，重新打开（必须填写 reviewNote 说明失败原因）
+echo "===== 复核失败，重新打开 ====="
+curl -s -X PATCH http://127.0.0.1:3019/issues/$ISSUE_ID2/status \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "status": "reopened",
+    "reviewNote": "孔位仍有偏差，第50拍试奏时音高不正确，请重新调整"
+  }' | python3 -m json.tool
+
+# 4. 重新提交修复
+echo "===== 重新提交修复 ====="
+curl -s -X PATCH http://127.0.0.1:3019/issues/$ISSUE_ID2/status \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "status": "fixed",
+    "fixDescription": "重新校准打孔机位置，偏移量已修正0.5mm"
+  }' | python3 -m json.tool
+
+# 5. 再次复核通过
+echo "===== 再次复核通过 ====="
+curl -s -X PATCH http://127.0.0.1:3019/issues/$ISSUE_ID2/status \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "status": "verified",
+    "reviewNote": "音高正确，确认修复完成"
+  }' | python3 -m json.tool
+
+# 6. 按状态查询问题
+echo "===== 所有 verified 状态问题 ====="
+curl "http://127.0.0.1:3019/issues?tuneId=tune_demo&status=verified"
+
+# 向后兼容：使用旧的 resolved 状态查询（自动映射为 verified）
+echo "===== 使用 resolved 查询（向后兼容） ====="
+curl "http://127.0.0.1:3019/issues?tuneId=tune_demo&status=resolved"
+
 # ---------- 纸带规格模板使用示例 ----------
 
 # 1. 获取所有模板列表
