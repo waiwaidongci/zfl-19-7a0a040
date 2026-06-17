@@ -20,6 +20,8 @@ const initialData = {
       templateId: null,
       templateNameSnapshot: null,
       currentEditionId: "edition_demo_init",
+      archived: false,
+      archivedAt: null,
       createdAt: new Date().toISOString()
     }
   ],
@@ -180,6 +182,7 @@ const routes = [
   "GET /health",
   "GET /tunes",
   "POST /tunes",
+  "GET /tunes/:id",
   "GET /tunes/:id/progress",
   "GET /tunes/:id/sections",
   "POST /tunes/:id/sections",
@@ -191,6 +194,8 @@ const routes = [
   "PATCH /tunes/:id/editions/:editionId/current",
   "GET /tunes/:id/play-sessions",
   "POST /tunes/:id/play-sessions",
+  "PATCH /tunes/:id/archive",
+  "PATCH /tunes/:id/unarchive",
   "PATCH /sections/:id/check",
   "GET /issues",
   "POST /issues",
@@ -235,6 +240,11 @@ async function ensureDb() {
       }
       if (tune.currentEditionId === undefined) {
         tune.currentEditionId = null;
+        needWrite = true;
+      }
+      if (tune.archived === undefined) {
+        tune.archived = false;
+        tune.archivedAt = null;
         needWrite = true;
       }
     }
@@ -359,6 +369,14 @@ function findTune(db, tuneId) {
     throw error;
   }
   return tune;
+}
+
+function ensureTuneNotArchived(tune) {
+  if (tune.archived) {
+    const error = new Error("曲目已归档，无法执行该操作，请先恢复曲目");
+    error.status = 403;
+    throw error;
+  }
 }
 
 function findTemplate(db, templateId) {
@@ -556,8 +574,15 @@ async function handle(req, res) {
   }
 
   if (req.method === "GET" && pathname === "/tunes") {
-    const tunes = db.tunes.map((tune) => ({ ...tune, progress: buildProgress(db, tune.id) }));
-    return send(res, 200, { data: tunes });
+    const archivedFilter = searchParams.get("archived");
+    let tunes = db.tunes;
+    if (archivedFilter === "true") {
+      tunes = tunes.filter((t) => t.archived);
+    } else if (archivedFilter === "false" || archivedFilter === null) {
+      tunes = tunes.filter((t) => !t.archived);
+    }
+    const result = tunes.map((tune) => ({ ...tune, progress: buildProgress(db, tune.id) }));
+    return send(res, 200, { data: result });
   }
 
   if (req.method === "POST" && pathname === "/tunes") {
@@ -595,6 +620,8 @@ async function handle(req, res) {
       templateId,
       templateNameSnapshot,
       currentEditionId: null,
+      archived: false,
+      archivedAt: null,
       createdAt: new Date().toISOString()
     };
     const edition = {
@@ -615,6 +642,14 @@ async function handle(req, res) {
     return send(res, 201, { data: tune, edition });
   }
 
+  const tuneDetailMatch = pathname.match(/^\/tunes\/([^/]+)$/);
+  if (tuneDetailMatch && req.method === "GET") {
+    const tuneId = tuneDetailMatch[1];
+    const tune = findTune(db, tuneId);
+    const progress = buildProgress(db, tuneId);
+    return send(res, 200, { data: { ...tune, progress } });
+  }
+
   const tuneSectionsMatch = pathname.match(/^\/tunes\/([^/]+)\/sections$/);
   if (tuneSectionsMatch && req.method === "GET") {
     const tuneId = tuneSectionsMatch[1];
@@ -628,7 +663,8 @@ async function handle(req, res) {
 
   if (tuneSectionsMatch && req.method === "POST") {
     const tuneId = tuneSectionsMatch[1];
-    findTune(db, tuneId);
+    const tune = findTune(db, tuneId);
+    ensureTuneNotArchived(tune);
     const body = await parseBody(req);
     required(body, ["startBeat", "endBeat", "laneRange"]);
     const section = {
@@ -648,7 +684,8 @@ async function handle(req, res) {
   const batchSectionsMatch = pathname.match(/^\/tunes\/([^/]+)\/sections\/batch$/);
   if (batchSectionsMatch && req.method === "POST") {
     const tuneId = batchSectionsMatch[1];
-    findTune(db, tuneId);
+    const tune = findTune(db, tuneId);
+    ensureTuneNotArchived(tune);
     const body = await parseBody(req);
 
     if (!Array.isArray(body)) {
@@ -764,8 +801,7 @@ async function handle(req, res) {
       createdSections.push(section);
     }
 
-    const tune = db.tunes.find((t) => t.id === tuneId);
-    if (tune && tune.currentEditionId) {
+    if (tune.currentEditionId) {
       const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
       if (edition) {
         for (const section of createdSections) {
@@ -806,6 +842,8 @@ async function handle(req, res) {
   if (checkMatch && req.method === "PATCH") {
     const section = db.sections.find((item) => item.id === checkMatch[1]);
     if (!section) return send(res, 404, { error: "区间不存在" });
+    const tune = findTune(db, section.tuneId);
+    ensureTuneNotArchived(tune);
     const body = await parseBody(req);
     section.checked = body.checked !== undefined ? Boolean(body.checked) : true;
     section.note = body.note ?? section.note;
@@ -832,7 +870,8 @@ async function handle(req, res) {
   if (req.method === "POST" && pathname === "/issues") {
     const body = await parseBody(req);
     required(body, ["tuneId", "sectionId", "type", "description"]);
-    findTune(db, body.tuneId);
+    const tune = findTune(db, body.tuneId);
+    ensureTuneNotArchived(tune);
     const section = db.sections.find((item) => item.id === body.sectionId && item.tuneId === body.tuneId);
     if (!section) return send(res, 400, { error: "区间不存在或不属于该曲目" });
     const resolvedEditionId = resolveEditionId(db, body.tuneId, body.editionId || null);
@@ -873,6 +912,8 @@ async function handle(req, res) {
   if (issueStatusMatch && req.method === "PATCH") {
     const issue = db.issues.find((item) => item.id === issueStatusMatch[1]);
     if (!issue) return send(res, 404, { error: "问题不存在" });
+    const tune = findTune(db, issue.tuneId);
+    ensureTuneNotArchived(tune);
     const body = await parseBody(req);
     required(body, ["status"]);
     validateIssueStatus(body.status);
@@ -918,7 +959,8 @@ async function handle(req, res) {
 
   if (playSessionsListMatch && req.method === "POST") {
     const tuneId = playSessionsListMatch[1];
-    findTune(db, tuneId);
+    const tune = findTune(db, tuneId);
+    ensureTuneNotArchived(tune);
     const body = await parseBody(req);
     required(body, ["player", "startSectionId"]);
     const session = {
@@ -938,6 +980,32 @@ async function handle(req, res) {
     return send(res, 201, { data: session });
   }
 
+  const archiveMatch = pathname.match(/^\/tunes\/([^/]+)\/archive$/);
+  if (archiveMatch && req.method === "PATCH") {
+    const tuneId = archiveMatch[1];
+    const tune = findTune(db, tuneId);
+    if (tune.archived) {
+      return send(res, 400, { error: "曲目已处于归档状态" });
+    }
+    tune.archived = true;
+    tune.archivedAt = new Date().toISOString();
+    await writeDb(db);
+    return send(res, 200, { data: tune });
+  }
+
+  const unarchiveMatch = pathname.match(/^\/tunes\/([^/]+)\/unarchive$/);
+  if (unarchiveMatch && req.method === "PATCH") {
+    const tuneId = unarchiveMatch[1];
+    const tune = findTune(db, tuneId);
+    if (!tune.archived) {
+      return send(res, 400, { error: "曲目未处于归档状态" });
+    }
+    tune.archived = false;
+    tune.archivedAt = null;
+    await writeDb(db);
+    return send(res, 200, { data: tune });
+  }
+
   const playSessionMatch = pathname.match(/^\/play-sessions\/([^/]+)$/);
   if (playSessionMatch && req.method === "GET") {
     const sessionId = playSessionMatch[1];
@@ -951,6 +1019,8 @@ async function handle(req, res) {
     const sessionId = endSessionMatch[1];
     const session = db.playSessions.find((item) => item.id === sessionId);
     if (!session) return send(res, 404, { error: "试奏会话不存在" });
+    const tune = findTune(db, session.tuneId);
+    ensureTuneNotArchived(tune);
     if (session.status === "ended") {
       return send(res, 400, { error: "试奏会话已结束" });
     }
@@ -978,6 +1048,7 @@ async function handle(req, res) {
   if (tuneEditionsMatch && req.method === "POST") {
     const tuneId = tuneEditionsMatch[1];
     const tune = findTune(db, tuneId);
+    ensureTuneNotArchived(tune);
     const body = await parseBody(req);
     required(body, ["description"]);
 
@@ -1058,6 +1129,7 @@ async function handle(req, res) {
     const tuneId = editionCurrentMatch[1];
     const editionId = editionCurrentMatch[2];
     const tune = findTune(db, tuneId);
+    ensureTuneNotArchived(tune);
     const edition = findEdition(db, editionId);
     if (edition.tuneId !== tuneId) {
       return send(res, 400, { error: "版次不属于该曲目" });
@@ -1159,12 +1231,17 @@ async function handle(req, res) {
     validatePriority(defaultPriority);
 
     if (tuneId) {
-      findTune(db, tuneId);
+      const tune = findTune(db, tuneId);
+      ensureTuneNotArchived(tune);
     }
 
-    const uncheckedSections = db.sections.filter(
-      (s) => (!tuneId || s.tuneId === tuneId) && !s.checked
-    );
+    const uncheckedSections = db.sections.filter((s) => {
+      if (tuneId && s.tuneId !== tuneId) return false;
+      if (s.checked) return false;
+      const tune = db.tunes.find((t) => t.id === s.tuneId);
+      if (tune && tune.archived) return false;
+      return true;
+    });
 
     if (uncheckedSections.length === 0) {
       return send(res, 200, { data: [], message: "没有未检查的区间需要生成任务" });
@@ -1204,7 +1281,8 @@ async function handle(req, res) {
   if (req.method === "POST" && pathname === "/punch-tasks") {
     const body = await parseBody(req);
     required(body, ["tuneId", "sectionId"]);
-    findTune(db, body.tuneId);
+    const tune = findTune(db, body.tuneId);
+    ensureTuneNotArchived(tune);
     const section = findSection(db, body.sectionId);
     if (section.tuneId !== body.tuneId) {
       return send(res, 400, { error: "区间不属于该曲目" });
@@ -1240,6 +1318,8 @@ async function handle(req, res) {
   const claimTaskMatch = pathname.match(/^\/punch-tasks\/([^/]+)\/claim$/);
   if (claimTaskMatch && req.method === "PATCH") {
     const task = findPunchTask(db, claimTaskMatch[1]);
+    const tune = findTune(db, task.tuneId);
+    ensureTuneNotArchived(tune);
     if (task.status !== "pending") {
       return send(res, 400, { error: `当前任务状态为 ${task.status}，无法领取` });
     }
@@ -1257,6 +1337,8 @@ async function handle(req, res) {
   const completeTaskMatch = pathname.match(/^\/punch-tasks\/([^/]+)\/complete$/);
   if (completeTaskMatch && req.method === "PATCH") {
     const task = findPunchTask(db, completeTaskMatch[1]);
+    const tune = findTune(db, task.tuneId);
+    ensureTuneNotArchived(tune);
     if (task.status === "completed") {
       return send(res, 400, { error: "任务已完成" });
     }
