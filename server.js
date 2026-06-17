@@ -2557,13 +2557,123 @@ async function handle(req, res) {
     }
     const body = await parseBody(req);
     required(body, ["endSectionId"]);
+
+    const draftIssues = body.issues || [];
+    const createdIssues = [];
+    const allWarnings = [];
+    const issueErrors = [];
+    const originalIssuesLength = db.issues.length;
+
+    if (draftIssues.length > 0) {
+      for (let i = 0; i < draftIssues.length; i++) {
+        const draft = draftIssues[i];
+        try {
+          required(draft, ["sectionId", "type", "description"]);
+        } catch (e) {
+          issueErrors.push({ index: i, error: e.message });
+          continue;
+        }
+
+        const section = db.sections.find(
+          (item) => item.id === draft.sectionId && item.tuneId === session.tuneId
+        );
+        if (!section) {
+          issueErrors.push({ index: i, error: "区间不存在或不属于该曲目" });
+          continue;
+        }
+
+        const resolvedEditionId = resolveEditionId(db, session.tuneId, draft.editionId || null);
+        if (resolvedEditionId) {
+          const edition = findEdition(db, resolvedEditionId);
+          if (edition.tuneId !== session.tuneId) {
+            issueErrors.push({ index: i, error: "版次不属于该曲目" });
+            continue;
+          }
+          const sectionInEdition = edition.sectionsSnapshot.find(
+            (s) => s.id === draft.sectionId
+          );
+          if (!sectionInEdition) {
+            issueErrors.push({ index: i, error: "区间不存在于指定版次中" });
+            continue;
+          }
+        }
+
+        const now = new Date().toISOString();
+        const issue = {
+          id: makeId("issue"),
+          tuneId: session.tuneId,
+          editionId: resolvedEditionId,
+          sectionId: draft.sectionId,
+          type: draft.type,
+          beat: draft.beat === undefined ? null : Number(draft.beat),
+          lane: draft.lane === undefined ? null : Number(draft.lane),
+          description: draft.description,
+          status: "open",
+          createdAt: now,
+          resolvedAt: null,
+          fixDescription: null,
+          fixTime: null,
+          reviewNote: null,
+          timeline: [
+            {
+              status: "open",
+              fromStatus: null,
+              at: now,
+              note: "创建问题"
+            }
+          ]
+        };
+
+        db.issues.push(issue);
+
+        const conflicts = detectConflictsForNewIssue(db, session.tuneId, issue);
+
+        if (conflicts.errors.length > 0) {
+          db.issues.pop();
+          issueErrors.push({
+            index: i,
+            error: "存在严重冲突，无法保存",
+            conflicts: conflicts.errors,
+            warnings: conflicts.warnings
+          });
+          continue;
+        }
+
+        issue.conflicts = {
+          warnings: conflicts.warnings,
+          lastCheckedAt: new Date().toISOString()
+        };
+
+        createdIssues.push(issue);
+        allWarnings.push(...conflicts.warnings);
+      }
+
+      if (issueErrors.length > 0) {
+        db.issues.length = originalIssuesLength;
+        return send(res, 409, {
+          error: "部分问题存在冲突或校验失败，结束会话已取消",
+          issueErrors,
+          warnings: allWarnings
+        });
+      }
+    }
+
     session.endSectionId = body.endSectionId ?? session.endSectionId;
-    session.issuesFound = body.issuesFound !== undefined ? Number(body.issuesFound) : session.issuesFound;
+    session.issuesFound = draftIssues.length > 0 ? draftIssues.length : (body.issuesFound !== undefined ? Number(body.issuesFound) : session.issuesFound);
     session.note = body.note !== undefined ? body.note : session.note;
     session.status = "ended";
     session.endedAt = new Date().toISOString();
+
     await writeDb(db);
-    return send(res, 200, { data: session });
+
+    const progress = buildProgress(db, session.tuneId);
+
+    return send(res, 200, {
+      data: session,
+      issues: createdIssues,
+      warnings: allWarnings,
+      progress
+    });
   }
 
   const tuneEditionsMatch = pathname.match(/^\/tunes\/([^/]+)\/editions$/);
