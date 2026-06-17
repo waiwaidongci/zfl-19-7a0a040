@@ -1,9 +1,24 @@
 const http = require("http");
-const { readFile, writeFile, mkdir } = require("fs/promises");
+const { readFile, writeFile, mkdir, copyFile } = require("fs/promises");
 const path = require("path");
 
 const PORT = Number(process.env.PORT || 3019);
 const DB_FILE = path.join(__dirname, "data", "db.json");
+const BACKUP_DIR = path.join(__dirname, "data", "backups");
+const MIGRATION_LOG_FILE = path.join(__dirname, "data", "migration-log.json");
+
+const CURRENT_DATA_VERSION = 2;
+
+const VALID_ISSUE_STATUSES = ["open", "fixed", "verified", "reopened"];
+const VALID_TASK_STATUSES = ["pending", "claimed", "completed"];
+const VALID_PRIORITIES = ["low", "medium", "high", "urgent"];
+
+const migrationState = {
+  lastMigration: null,
+  backupPath: null,
+  dataVersion: CURRENT_DATA_VERSION,
+  migrationHistory: []
+};
 
 const initialData = {
   tunes: [
@@ -179,8 +194,455 @@ const initialData = {
   reportSnapshots: []
 };
 
+initialData._dataVersion = CURRENT_DATA_VERSION;
+
+async function createBackup(dbFilePath) {
+  await mkdir(BACKUP_DIR, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupFileName = `db_backup_v${timestamp}.json`;
+  const backupPath = path.join(BACKUP_DIR, backupFileName);
+  await copyFile(dbFilePath, backupPath);
+  return backupPath;
+}
+
+async function loadMigrationLog() {
+  try {
+    const log = JSON.parse(await readFile(MIGRATION_LOG_FILE, "utf8"));
+    migrationState.migrationHistory = log.history || [];
+    if (migrationState.migrationHistory.length > 0) {
+      const last = migrationState.migrationHistory[migrationState.migrationHistory.length - 1];
+      migrationState.lastMigration = last;
+      migrationState.backupPath = last.backupPath || null;
+    }
+  } catch {
+    migrationState.migrationHistory = [];
+  }
+}
+
+async function saveMigrationLog(entry) {
+  migrationState.migrationHistory.push(entry);
+  migrationState.lastMigration = entry;
+  migrationState.backupPath = entry.backupPath || null;
+  try {
+    await writeFile(
+      MIGRATION_LOG_FILE,
+      JSON.stringify({ history: migrationState.migrationHistory }, null, 2)
+    );
+  } catch (err) {
+    console.error("Failed to save migration log:", err.message);
+  }
+}
+
+function getDataVersion(data) {
+  if (data && typeof data._dataVersion === "number") {
+    return data._dataVersion;
+  }
+  return 0;
+}
+
+function normalizeIssueStatusForMigration(status) {
+  if (status === "resolved") return "verified";
+  if (VALID_ISSUE_STATUSES.includes(status)) return status;
+  return "open";
+}
+
+function migrate_v0_to_v1(data, report) {
+  const changes = [];
+  let fixedCount = 0;
+
+  if (!data.tunes) data.tunes = [];
+  if (!data.sections) data.sections = [];
+  if (!data.issues) data.issues = [];
+  if (!data.tapeEditions) data.tapeEditions = [];
+  if (!data.playSessions) data.playSessions = [];
+  if (!data.punchTasks) data.punchTasks = [];
+  if (!data.stripSpecTemplates) {
+    data.stripSpecTemplates = initialData.stripSpecTemplates;
+    changes.push("added stripSpecTemplates from initial data");
+  }
+  if (!data.reportSnapshots) data.reportSnapshots = [];
+
+  for (const tune of data.tunes) {
+    if (tune.templateId === undefined) {
+      tune.templateId = null;
+      tune.templateNameSnapshot = null;
+      fixedCount++;
+    }
+    if (tune.currentEditionId === undefined) {
+      tune.currentEditionId = null;
+      fixedCount++;
+    }
+    if (tune.archived === undefined) {
+      tune.archived = false;
+      tune.archivedAt = null;
+      fixedCount++;
+    }
+    if (!tune.createdAt) {
+      tune.createdAt = new Date().toISOString();
+      fixedCount++;
+    }
+  }
+  if (fixedCount > 0) {
+    changes.push(`fixed ${fixedCount} missing fields in ${data.tunes.length} tunes`);
+  }
+
+  fixedCount = 0;
+  for (const issue of data.issues) {
+    if (issue.editionId === undefined) {
+      issue.editionId = null;
+      fixedCount++;
+    }
+    if (issue.fixDescription === undefined) {
+      issue.fixDescription = null;
+      fixedCount++;
+    }
+    if (issue.fixTime === undefined) {
+      issue.fixTime = null;
+      fixedCount++;
+    }
+    if (issue.reviewNote === undefined) {
+      issue.reviewNote = null;
+      fixedCount++;
+    }
+    if (issue.resolvedAt === undefined) {
+      issue.resolvedAt = null;
+      fixedCount++;
+    }
+    if (!issue.createdAt) {
+      issue.createdAt = new Date().toISOString();
+      fixedCount++;
+    }
+    const originalStatus = issue.status;
+    const normalized = normalizeIssueStatusForMigration(issue.status);
+    if (normalized !== issue.status) {
+      issue.status = normalized;
+      changes.push(`fixed issue status: ${originalStatus} -> ${normalized}`);
+    }
+  }
+  if (fixedCount > 0) {
+    changes.push(`fixed ${fixedCount} missing fields in ${data.issues.length} issues`);
+  }
+
+  fixedCount = 0;
+  for (const section of data.sections) {
+    if (section.checked === undefined) {
+      section.checked = false;
+      fixedCount++;
+    }
+    if (section.note === undefined) {
+      section.note = "";
+      fixedCount++;
+    }
+  }
+  if (fixedCount > 0) {
+    changes.push(`fixed ${fixedCount} missing fields in ${data.sections.length} sections`);
+  }
+
+  for (const tune of data.tunes) {
+    if (!tune.currentEditionId) {
+      const existingEdition = data.tapeEditions.find(
+        (e) => e.tuneId === tune.id && e.isCurrent
+      );
+      if (!existingEdition) {
+        const tuneSections = (data.sections || []).filter(
+          (s) => s.tuneId === tune.id
+        );
+        const edition = {
+          id: makeId("edition"),
+          tuneId: tune.id,
+          version: 1,
+          source: "migration",
+          sourceEditionId: null,
+          description: "v1迁移创建初始版次",
+          sectionsSnapshot: JSON.parse(JSON.stringify(tuneSections)),
+          isCurrent: true,
+          createdAt: tune.createdAt || new Date().toISOString()
+        };
+        data.tapeEditions.push(edition);
+        tune.currentEditionId = edition.id;
+        for (const issue of data.issues || []) {
+          if (issue.tuneId === tune.id && !issue.editionId) {
+            issue.editionId = edition.id;
+          }
+        }
+        changes.push(`created initial tape edition for tune ${tune.id}`);
+      }
+    } else {
+      for (const issue of data.issues || []) {
+        if (issue.tuneId === tune.id && !issue.editionId) {
+          issue.editionId = tune.currentEditionId;
+        }
+      }
+    }
+  }
+
+  data._dataVersion = 1;
+  report.steps.push({ version: 1, changes });
+  return changes.length > 0;
+}
+
+function migrate_v1_to_v2(data, report) {
+  const changes = [];
+  const validTuneIds = new Set((data.tunes || []).map((t) => t.id));
+  const validSectionIds = new Set((data.sections || []).map((s) => s.id));
+  const validEditionIds = new Set((data.tapeEditions || []).map((e) => e.id));
+
+  const removedIssues = [];
+  data.issues = (data.issues || []).filter((issue) => {
+    let keep = true;
+    if (issue.tuneId && !validTuneIds.has(issue.tuneId)) {
+      removedIssues.push({ id: issue.id, reason: "invalid tuneId reference" });
+      keep = false;
+    }
+    if (keep && issue.sectionId && !validSectionIds.has(issue.sectionId)) {
+      removedIssues.push({ id: issue.id, reason: "invalid sectionId reference" });
+      keep = false;
+    }
+    if (keep && issue.editionId && !validEditionIds.has(issue.editionId)) {
+      issue.editionId = null;
+      changes.push(`cleared invalid editionId on issue ${issue.id}`);
+    }
+    return keep;
+  });
+  if (removedIssues.length > 0) {
+    changes.push(`removed ${removedIssues.length} issues with dangling references`);
+    report.removedIssues = removedIssues;
+  }
+
+  let statusFixCount = 0;
+  for (const issue of data.issues) {
+    const originalStatus = issue.status;
+    const normalized = normalizeIssueStatusForMigration(issue.status);
+    if (normalized !== issue.status) {
+      issue.status = normalized;
+      statusFixCount++;
+      changes.push(`fixed issue status: ${originalStatus} -> ${normalized}`);
+    }
+  }
+
+  const removedTasks = [];
+  data.punchTasks = (data.punchTasks || []).filter((task) => {
+    let keep = true;
+    if (task.tuneId && !validTuneIds.has(task.tuneId)) {
+      removedTasks.push({ id: task.id, reason: "invalid tuneId reference" });
+      keep = false;
+    }
+    if (keep && task.sectionId && !validSectionIds.has(task.sectionId)) {
+      removedTasks.push({ id: task.id, reason: "invalid sectionId reference" });
+      keep = false;
+    }
+    if (keep && task.priority && !VALID_PRIORITIES.includes(task.priority)) {
+      task.priority = "medium";
+      changes.push(`fixed invalid priority on task ${task.id}`);
+    }
+    if (keep && task.status && !VALID_TASK_STATUSES.includes(task.status)) {
+      task.status = "pending";
+      changes.push(`fixed invalid status on task ${task.id}`);
+    }
+    return keep;
+  });
+  if (removedTasks.length > 0) {
+    changes.push(`removed ${removedTasks.length} punch tasks with dangling references`);
+    report.removedTasks = removedTasks;
+  }
+
+  const removedSections = [];
+  data.sections = (data.sections || []).filter((section) => {
+    if (section.tuneId && !validTuneIds.has(section.tuneId)) {
+      removedSections.push({ id: section.id, reason: "invalid tuneId reference" });
+      return false;
+    }
+    return true;
+  });
+  if (removedSections.length > 0) {
+    changes.push(`removed ${removedSections.length} sections with dangling tune references`);
+    report.removedSections = removedSections;
+  }
+
+  const removedEditions = [];
+  data.tapeEditions = (data.tapeEditions || []).filter((edition) => {
+    if (edition.tuneId && !validTuneIds.has(edition.tuneId)) {
+      removedEditions.push({ id: edition.id, reason: "invalid tuneId reference" });
+      return false;
+    }
+    return true;
+  });
+  if (removedEditions.length > 0) {
+    changes.push(`removed ${removedEditions.length} tape editions with dangling tune references`);
+    report.removedEditions = removedEditions;
+  }
+
+  const removedSessions = [];
+  data.playSessions = (data.playSessions || []).filter((session) => {
+    if (session.tuneId && !validTuneIds.has(session.tuneId)) {
+      removedSessions.push({ id: session.id, reason: "invalid tuneId reference" });
+      return false;
+    }
+    return true;
+  });
+  if (removedSessions.length > 0) {
+    changes.push(`removed ${removedSessions.length} play sessions with dangling references`);
+  }
+
+  const removedSnapshots = [];
+  data.reportSnapshots = (data.reportSnapshots || []).filter((snap) => {
+    if (snap.tuneId && !validTuneIds.has(snap.tuneId)) {
+      removedSnapshots.push({ id: snap.id, reason: "invalid tuneId reference" });
+      return false;
+    }
+    return true;
+  });
+  if (removedSnapshots.length > 0) {
+    changes.push(`removed ${removedSnapshots.length} report snapshots with dangling references`);
+  }
+
+  for (const tune of data.tunes) {
+    if (tune.currentEditionId && !validEditionIds.has(tune.currentEditionId)) {
+      tune.currentEditionId = null;
+      changes.push(`cleared invalid currentEditionId on tune ${tune.id}`);
+    }
+  }
+
+  data._dataVersion = 2;
+  report.steps.push({ version: 2, changes });
+  return changes.length > 0;
+}
+
+const MIGRATIONS = [
+  { from: 0, to: 1, run: migrate_v0_to_v1 },
+  { from: 1, to: 2, run: migrate_v1_to_v2 }
+];
+
+async function runMigrations() {
+  await mkdir(path.dirname(DB_FILE), { recursive: true });
+  await loadMigrationLog();
+
+  let rawData;
+  let sourceVersion;
+
+  try {
+    rawData = JSON.parse(await readFile(DB_FILE, "utf8"));
+    sourceVersion = getDataVersion(rawData);
+  } catch (err) {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      success: false,
+      fromVersion: 0,
+      toVersion: CURRENT_DATA_VERSION,
+      error: `Failed to read db.json: ${err.message}`,
+      backupPath: null,
+      steps: []
+    };
+    await saveMigrationLog(logEntry);
+    migrationState.dataVersion = 0;
+    return { initialized: true, error: err.message };
+  }
+
+  migrationState.dataVersion = sourceVersion;
+
+  if (sourceVersion >= CURRENT_DATA_VERSION) {
+    return { initialized: false, skipped: true, currentVersion: sourceVersion };
+  }
+
+  let backupPath = null;
+  try {
+    backupPath = await createBackup(DB_FILE);
+  } catch (err) {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      success: false,
+      fromVersion: sourceVersion,
+      toVersion: CURRENT_DATA_VERSION,
+      error: `Backup failed: ${err.message}`,
+      backupPath: null,
+      steps: []
+    };
+    await saveMigrationLog(logEntry);
+    return { initialized: false, error: `Backup failed: ${err.message}` };
+  }
+
+  const report = {
+    timestamp: new Date().toISOString(),
+    fromVersion: sourceVersion,
+    toVersion: CURRENT_DATA_VERSION,
+    backupPath,
+    steps: []
+  };
+
+  let data = JSON.parse(JSON.stringify(rawData));
+  let currentVersion = sourceVersion;
+  let anyChanges = false;
+
+  try {
+    for (const migration of MIGRATIONS) {
+      if (currentVersion === migration.from && currentVersion < CURRENT_DATA_VERSION) {
+        const changed = migration.run(data, report);
+        if (changed) anyChanges = true;
+        currentVersion = migration.to;
+      }
+    }
+
+    data._dataVersion = CURRENT_DATA_VERSION;
+
+    if (anyChanges || sourceVersion < CURRENT_DATA_VERSION) {
+      await writeFile(DB_FILE, JSON.stringify(data, null, 2));
+    }
+
+    const logEntry = {
+      timestamp: report.timestamp,
+      success: true,
+      fromVersion: sourceVersion,
+      toVersion: CURRENT_DATA_VERSION,
+      backupPath,
+      steps: report.steps,
+      removedIssues: report.removedIssues,
+      removedSections: report.removedSections,
+      removedEditions: report.removedEditions,
+      removedTasks: report.removedTasks
+    };
+    await saveMigrationLog(logEntry);
+    migrationState.dataVersion = CURRENT_DATA_VERSION;
+
+    return {
+      initialized: anyChanges,
+      success: true,
+      fromVersion: sourceVersion,
+      toVersion: CURRENT_DATA_VERSION,
+      backupPath,
+      report
+    };
+  } catch (err) {
+    const logEntry = {
+      timestamp: report.timestamp,
+      success: false,
+      fromVersion: sourceVersion,
+      toVersion: CURRENT_DATA_VERSION,
+      error: err.message,
+      backupPath,
+      steps: report.steps
+    };
+    await saveMigrationLog(logEntry);
+    return {
+      initialized: false,
+      success: false,
+      error: err.message,
+      backupPath
+    };
+  }
+}
+
+function getMigrationReport() {
+  return {
+    currentVersion: migrationState.dataVersion,
+    lastMigration: migrationState.lastMigration,
+    backupPath: migrationState.backupPath,
+    history: migrationState.migrationHistory.slice(-10).reverse()
+  };
+}
+
 const routes = [
   "GET /health",
+  "GET /migrations",
   "GET /tunes",
   "POST /tunes",
   "GET /tunes/:id",
@@ -218,111 +680,10 @@ const routes = [
 ];
 
 async function ensureDb() {
-  await mkdir(path.dirname(DB_FILE), { recursive: true });
-  try {
-    const data = JSON.parse(await readFile(DB_FILE, "utf8"));
-    let needWrite = false;
-    if (!data.stripSpecTemplates) {
-      data.stripSpecTemplates = initialData.stripSpecTemplates;
-      needWrite = true;
-    }
-    if (!data.playSessions) {
-      data.playSessions = [];
-      needWrite = true;
-    }
-    if (!data.punchTasks) {
-      data.punchTasks = [];
-      needWrite = true;
-    }
-    if (!data.tapeEditions) {
-      data.tapeEditions = [];
-      needWrite = true;
-    }
-    if (!data.reportSnapshots) {
-      data.reportSnapshots = [];
-      needWrite = true;
-    }
-    for (const tune of data.tunes || []) {
-      if (tune.templateId === undefined) {
-        tune.templateId = null;
-        tune.templateNameSnapshot = null;
-        needWrite = true;
-      }
-      if (tune.currentEditionId === undefined) {
-        tune.currentEditionId = null;
-        needWrite = true;
-      }
-      if (tune.archived === undefined) {
-        tune.archived = false;
-        tune.archivedAt = null;
-        needWrite = true;
-      }
-    }
-    for (const issue of data.issues || []) {
-      if (issue.editionId === undefined) {
-        issue.editionId = null;
-        needWrite = true;
-      }
-      if (issue.fixDescription === undefined) {
-        issue.fixDescription = null;
-        needWrite = true;
-      }
-      if (issue.fixTime === undefined) {
-        issue.fixTime = null;
-        needWrite = true;
-      }
-      if (issue.reviewNote === undefined) {
-        issue.reviewNote = null;
-        needWrite = true;
-      }
-      if (issue.status === "resolved") {
-        issue.status = "verified";
-        needWrite = true;
-      }
-    }
-    for (const tune of data.tunes || []) {
-      if (!tune.currentEditionId) {
-        const existingEdition = data.tapeEditions.find(
-          (e) => e.tuneId === tune.id && e.isCurrent
-        );
-        if (!existingEdition) {
-          const tuneSections = (data.sections || []).filter(
-            (s) => s.tuneId === tune.id
-          );
-          const edition = {
-            id: makeId("edition"),
-            tuneId: tune.id,
-            version: 1,
-            source: "initial",
-            sourceEditionId: null,
-            description: "历史数据迁移初始版次",
-            sectionsSnapshot: JSON.parse(JSON.stringify(tuneSections)),
-            isCurrent: true,
-            createdAt: tune.createdAt || new Date().toISOString()
-          };
-          data.tapeEditions.push(edition);
-          tune.currentEditionId = edition.id;
-          for (const issue of data.issues || []) {
-            if (issue.tuneId === tune.id && !issue.editionId) {
-              issue.editionId = edition.id;
-            }
-          }
-          needWrite = true;
-        }
-      } else {
-        for (const issue of data.issues || []) {
-          if (issue.tuneId === tune.id && !issue.editionId) {
-            issue.editionId = tune.currentEditionId;
-            needWrite = true;
-          }
-        }
-      }
-    }
-    if (needWrite) {
-      await writeFile(DB_FILE, JSON.stringify(data, null, 2));
-    }
-  } catch {
+  const result = await runMigrations();
+  if (result.initialized && result.error) {
     await writeFile(DB_FILE, JSON.stringify(initialData, null, 2));
+    migrationState.dataVersion = CURRENT_DATA_VERSION;
   }
 }
 
@@ -332,6 +693,9 @@ async function readDb() {
 }
 
 async function writeDb(data) {
+  if (data._dataVersion === undefined) {
+    data._dataVersion = CURRENT_DATA_VERSION;
+  }
   await writeFile(DB_FILE, JSON.stringify(data, null, 2));
 }
 
@@ -1045,7 +1409,26 @@ async function handle(req, res) {
   const db = await readDb();
 
   if (req.method === "GET" && pathname === "/health") {
-    return send(res, 200, { ok: true, service: "organ-strip-punch-api", routes });
+    return send(res, 200, {
+      ok: true,
+      service: "organ-strip-punch-api",
+      routes,
+      dataVersion: migrationState.dataVersion,
+      lastMigration: migrationState.lastMigration
+        ? {
+            success: migrationState.lastMigration.success,
+            timestamp: migrationState.lastMigration.timestamp,
+            fromVersion: migrationState.lastMigration.fromVersion,
+            toVersion: migrationState.lastMigration.toVersion,
+            error: migrationState.lastMigration.error || null
+          }
+        : null,
+      backupPath: migrationState.backupPath
+    });
+  }
+
+  if (req.method === "GET" && pathname === "/migrations") {
+    return send(res, 200, { data: getMigrationReport() });
   }
 
   if (req.method === "GET" && pathname === "/tunes") {
@@ -2007,6 +2390,35 @@ const server = http.createServer((req, res) => {
   handle(req, res).catch((error) => send(res, error.status || 500, { error: error.message || "服务器错误" }));
 });
 
-server.listen(PORT, () => {
-  console.log(`Organ strip punch API running at http://127.0.0.1:${PORT}`);
-});
+async function bootstrap() {
+  console.log("[Migration] Starting data migration check...");
+  const result = await runMigrations();
+  if (result.skipped) {
+    console.log(`[Migration] Data is up to date at version ${result.currentVersion}, no migration needed.`);
+  } else if (result.success) {
+    console.log(`[Migration] Successfully migrated from v${result.fromVersion} to v${result.toVersion}`);
+    if (result.backupPath) {
+      console.log(`[Migration] Backup created at: ${result.backupPath}`);
+    }
+    if (result.report && result.report.steps) {
+      for (const step of result.report.steps) {
+        console.log(`[Migration] v${step.version} changes:`);
+        for (const change of step.changes) {
+          console.log(`  - ${change}`);
+        }
+      }
+    }
+  } else if (result.error) {
+    console.error(`[Migration] Migration failed: ${result.error}`);
+    if (result.backupPath) {
+      console.error(`[Migration] Original data backed up at: ${result.backupPath}`);
+    }
+  }
+
+  server.listen(PORT, () => {
+    console.log(`Organ strip punch API running at http://127.0.0.1:${PORT}`);
+    console.log(`Data version: ${migrationState.dataVersion}`);
+  });
+}
+
+bootstrap();
