@@ -588,3 +588,190 @@ curl -s -X POST http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshot \
 echo "===== 全部快照 ====="
 curl -s http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshots | python3 -m json.tool
 ```
+
+## 本地与CI验证流程
+
+本项目零依赖（不引入Web框架、不引入数据库依赖、不引入测试框架），所有验证脚本均使用 Node.js 内置模块。所有验证过程**绝对不会写坏仓库里的 `data/db.json`**，也**不会覆盖 `data/backups/` 中的历史备份**——每个脚本都通过 `DATA_DIR` 环境变量指向独立临时目录，服务退出后自动清理。验证完成后会主动校验仓库原始数据的 SHA256 与备份目录完整性。
+
+### 前置条件
+
+- Node.js >= 16
+- 无需 `npm install`（无任何依赖）
+
+### 一键全量验证（本地 & CI 通用）
+
+```bash
+# 顺序执行：语法检查 → 冒烟测试 → 迁移兼容检查 → 并发事务测试 → 跨版次保护测试
+npm test
+# 或
+npm run verify
+# CI 别名
+npm run ci
+```
+
+### 分步验证命令
+
+| 命令 | 说明 | 失败退出码 | 是否触碰仓库数据 |
+|------|------|-----------|----------------|
+| `npm run lint` | 语法检查（`node --check` 所有 JS + JSON parse） | `1` | ❌ 只读 |
+| `npm run smoke` | 临时 DATA_DIR 启动，14 项 API 冒烟测试闭环 | `1` | ❌ 临时目录隔离 |
+| `npm run migrate-check` | 7 个历史版本（v0~v6）模拟迁移到当前 v7 | `1` | ❌ 临时目录隔离 |
+| `npm run test:concurrent` | 并发写入隔离测试，7 项原子性验证 | `1` | ❌ 临时目录隔离 |
+| `npm run test:edition` | 跨版次保护回归测试，5 项保护机制验证 | `1` | ❌ 临时目录隔离 |
+
+### 各验证阶段说明
+
+#### 1. 语法检查 `npm run lint`
+
+- 对 `server.js`、`test-concurrent.js`、`test-edition-protection.js` 及 `scripts/*.js` 执行 `node --check`
+- 对 `package.json`、`data/db.json`、`data/migration-log.json` 执行 JSON parse
+- 仅做静态校验，不启动服务
+
+#### 2. 冒烟测试 `npm run smoke`
+
+- 从 `data/db.json` **复制**一份到系统临时目录（`os.tmpdir()` 下的 `zfl-smoke-XXXXXX`），设置 `DATA_DIR` 启动服务
+- 随机端口（3300~4299 区间），避免与已运行服务冲突
+- 覆盖 14 个 API 场景：健康检查 → 曲目/区间 CRUD → 问题状态流转 → 模板 → 版次创建/对比 → 任务生成/领取/完成 → 报告快照 → 写入队列最终一致
+- 验证完毕后：
+  1. 等待写入队列排空（`pendingWrites=0`）
+  2. **校验仓库 `data/db.json` SHA256 未变**
+  3. **校验 `data/backups/` 目录文件清单和 mtime 未变**
+  4. 递归删除临时目录
+
+#### 3. 迁移兼容检查 `npm run migrate-check`
+
+为每个历史版本构造具有代表性的"脏数据"（含悬挂引用、非法枚举值、缺失字段等），依次启动服务自动迁移到 v7：
+
+| 场景 | 构造数据特点 | 验证重点 |
+|------|-------------|---------|
+| v0 → v7 | 无 `_dataVersion` 字段、无版次、issue 用旧 `resolved` 状态 | 自动初始化版次、状态归一化、模板补齐 |
+| v1 → v7 | 含悬挂 section 引用、非法 priority/status、无 stripSpecTemplates | 悬挂引用清理、枚举值归一化、模板注入 |
+| v2 → v7 | 多版次结构、旧版次绑定的 issue | 跨版次 issue 引用清理 |
+| v3~v5 → v7 | 不同阶段中间格式 | 增量迁移链无断点 |
+| v6 → v7 | 最新前一版，含 punchTasks 完整字段 | 最新版本迁移零改动 |
+
+每个场景迁移后：
+- `/health` 返回 `dataVersion === 7`
+- 磁盘 `db.json` 已写入新版号
+- `/tunes`、`/strip-spec-templates` 接口正常返回
+- 场景结束后校验仓库真实数据未被改动
+
+#### 4. 并发事务测试 `npm run test:concurrent`
+
+（沿用已有 `test-concurrent.js`，已自带临时 `DATA_DIR` 隔离）
+
+覆盖 7 项并发安全验证：
+1. 10 路并发创建区间无丢失
+2. 5 路并发创建版次版本号唯一
+3. 合法/非法请求并发提交时失败事务正确回滚
+4. 单个写入失败后写入队列不卡死，后续写入成功
+5. `setAsCurrent` 并发版次切换原子性（唯一 current）
+6. 结束试奏 + 批量创建问题原子回滚
+7. 任务完成 + 区间勾选 + 版次快照更新原子同步
+
+#### 5. 跨版次保护测试 `npm run test:edition`
+
+（沿用已有 `test-edition-protection.js`，已自带临时 `DATA_DIR` 隔离）
+
+覆盖 5 项跨版次保护验证：
+1. 领取旧版次任务默认返回 409（不带 `force`）
+2. 领取旧版次任务带 `force: true` 允许
+3. 完成旧版次任务默认返回 409（不带 `force`）
+4. 完成旧版次任务带 `force: true` 允许
+5. `checkSection` 仅同步实时 sections + 当前版次快照，旧快照不被回写
+
+### CI 配置示例
+
+#### GitHub Actions
+
+```yaml
+name: Verify
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 全量验证
+        run: npm run ci
+```
+
+#### GitLab CI
+
+```yaml
+image: node:20-alpine
+verify:
+  script:
+    - npm run ci
+```
+
+### 失败排查指南
+
+#### `npm run lint` 失败
+
+| 现象 | 排查步骤 |
+|------|---------|
+| `SyntaxError: Unexpected token` | 对应文件语法错误，查看报错行号。若为近期修改，对比 `git diff` 中括号/逗号配对 |
+| `Unexpected end of JSON input` | `data/db.json` 格式损坏。检查最近一次写入是否被中断（`.tmp.*` 文件残留通常是断电/杀进程所致）。可从 `data/backups/` 中恢复最近备份 |
+| 文件不存在警告 | 正常现象，脚本会跳过不存在的目标文件 |
+
+#### `npm run smoke` 失败
+
+| 现象 | 排查步骤 |
+|------|---------|
+| `服务启动超时` | 1. 检查端口是否被占用（脚本打印 `PORT=XXXX node server.js`）；2. 查看日志中 `[Migration]` 段是否报错；3. `data/db.json` 迁移失败时服务不会退出而是继续运行，但若迁移抛异常可能卡主 |
+| 断言失败：`/health` 非 200 | 服务启动异常，查看 `[server]` 前缀日志 |
+| `写入队列未排空: pendingWrites > 0` | 有异步写入未完成，常见原因：磁盘慢、15s 内高频写入。再次运行通常可通过；若持续失败，检查 `server.js` 中 `enqueueWrite` 是否有未捕获异常 |
+| `data/db.json 被修改！` | **严重**——表示隔离机制失效。检查脚本中是否遗漏了 `DATA_DIR` 传递；排查近期是否修改了 server 中硬编码 `./data/` 路径 |
+| `backups/ 被覆盖` | **严重**——检查 `createBackup()` 是否在无迁移时误触发。正常情况下临时目录的 backups 写入不会进入仓库目录 |
+
+#### `npm run migrate-check` 失败
+
+| 现象 | 排查步骤 |
+|------|---------|
+| 单个场景版本号未到 v7 | 对应迁移函数（`migrate_vX_to_vY`）未正确递增 `_dataVersion`。在 `server.js` 中定位对应函数，检查末尾 `data._dataVersion = Y` 赋值 |
+| 场景 v0/v1 模板数不足 5 | `initialData.stripSpecTemplates` 被改动或 v0/v1 迁移逻辑中模板注入分支缺失 |
+| 悬挂引用未清理（接口 500） | 在 `migrate_v1_to_v2`、`migrate_v2_to_v3` 中加入调试日志，确认 filter 逻辑正确 |
+| 服务端日志 `[Migration] Backup failed` | 临时目录权限问题，脚本使用 `os.tmpdir()`，确认系统临时目录可写 |
+
+#### `npm run test:concurrent` 失败
+
+| 现象 | 排查步骤 |
+|------|---------|
+| Test 1 区间数量缺失 | `enqueueWrite` 串行化保证不丢失数据，若失败极可能是 `transaction()` 中 snapshot 回滚逻辑把成功请求也回滚了。检查 `server.js` 中 `transaction()` 的 try/finally 顺序 |
+| Test 2 版本号重复 | 版次号生成处（创建版次的 handler）未加事务锁。确认创建版次的整个计算 `max(version)+1` 到写入被同一个 `transaction()` 包裹 |
+| Test 4 队列卡死：`pendingFinal !== 0` | `enqueueWrite` 的 catch 分支未正确递减 `pendingWrites`。检查 `pendingWrites = Math.max(0, pendingWrites - 1)` 是否遗漏 |
+| Test 6/7 原子回滚失败 | 跨对象操作（endPlaySession / completeTask+checkSection）未在同一个 `transaction()` 中执行。确认 handler 中所有相关写操作均在同一事务内 |
+
+#### `npm run test:edition` 失败
+
+| 现象 | 排查步骤 |
+|------|---------|
+| 领取/完成旧版次任务未返回 409 | `claim`/`complete` handler 中 `taskEditionId` 与 `currentEditionId` 对比逻辑被改动。检查是否遗漏 `force` 判断分支 |
+| Test 5 `checkSection` 回写旧快照 | 版次快照更新逻辑错误。正确行为：只更新 `isCurrent === true` 的版次的 `sectionsSnapshot`，历史快照只读 |
+
+### 手动故障注入与快速复现
+
+如验证失败，可临时注入：
+
+```bash
+# 指定固定端口复现随机端口问题
+PORT=3999 node scripts/smoke-test.js
+
+# 只跑迁移检查的单个场景（临时加注释过滤 TEST_SCENARIOS 数组即可）
+```
+
+### 数据安全承诺
+
+所有验证脚本统一遵循以下隔离原则：
+
+1. **绝不直接使用仓库 `data/` 作为 `DATA_DIR`**，一律 `mkdtemp` 创建临时目录再将 `db.json` 复制过去
+2. 服务进程通过 `env.DATA_DIR` 显式传入，不依赖 `server.js` 的默认路径
+3. 验证完成后无论成功失败均 `SIGTERM` 服务并 `rm -rf` 临时目录
+4. **双重校验**：验证前对 `data/db.json` 计算 SHA256、对 `data/backups/` 做清单快照；验证后对比哈希未变、备份目录无增删改
+5. 若 SHA256 校验或备份目录校验失败，即使 API 测试通过，整体仍退出非零并打印明确警告
+
+> 违反以上原则的修改会导致 CI 失败，请在改动验证脚本后自查以上 5 点。

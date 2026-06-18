@@ -1,0 +1,21 @@
+{
+  "name": "zfl-organ-strip-punch-api",
+  "version": "1.0.0",
+  "description": "零依赖手摇风琴纸带打孔API后端",
+  "private": true,
+  "main": "server.js",
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "lint": "node scripts/check-syntax.js",
+    "smoke": "node scripts/smoke-test.js",
+    "migrate-check": "node scripts/migration-compat.js",
+    "test:concurrent": "node test-concurrent.js",
+    "test:edition": "node test-edition-protection.js",
+    "test": "npm run lint && npm run smoke && npm run migrate-check && npm run test:concurrent && npm run test:edition",
+    "verify": "npm test",
+    "ci": "npm test"
+  }
+}
