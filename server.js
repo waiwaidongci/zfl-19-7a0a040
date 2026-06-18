@@ -3448,6 +3448,12 @@ async function handle(req, res) {
     let tasks = db.punchTasks.filter((item) => {
       if (tuneId && item.tuneId !== tuneId) return false;
       if (resolvedEditionId && item.editionId !== resolvedEditionId) return false;
+      if (!editionIdParam && !tuneId) {
+        const tune = db.tunes.find((t) => t.id === item.tuneId);
+        const currentEditionId = tune ? tune.currentEditionId : null;
+        if (currentEditionId && item.editionId !== currentEditionId) return false;
+        if (!currentEditionId && item.editionId) return false;
+      }
       if (status && item.status !== status) return false;
       if (priority && item.priority !== priority) return false;
       if (assignee && item.assignee !== assignee) return false;
