@@ -1322,6 +1322,31 @@ function resolveTuneEdition(db, tuneId, editionId) {
   return edition;
 }
 
+function syncCurrentEditionSnapshot(db, tuneId) {
+  const tune = db.tunes.find((t) => t.id === tuneId);
+  if (!tune || !tune.currentEditionId) return;
+  const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
+  if (!edition) return;
+  edition.sectionsSnapshot = JSON.parse(
+    JSON.stringify(db.sections.filter((s) => s.tuneId === tuneId))
+  );
+}
+
+function applyEditionAsCurrent(db, tuneId, edition) {
+  for (const e of db.tapeEditions) {
+    if (e.tuneId === tuneId) {
+      e.isCurrent = e.id === edition.id;
+    }
+  }
+  edition.isCurrent = true;
+  const tune = db.tunes.find((t) => t.id === tuneId);
+  tune.currentEditionId = edition.id;
+  db.sections = db.sections.filter((s) => s.tuneId !== tuneId);
+  for (const snap of edition.sectionsSnapshot) {
+    db.sections.push({ ...snap, tuneId });
+  }
+}
+
 function compareEditions(baseEdition, targetEdition) {
   const baseSections = baseEdition.sectionsSnapshot || [];
   const targetSections = targetEdition.sectionsSnapshot || [];
@@ -2763,13 +2788,7 @@ async function handle(req, res) {
       };
 
       db.sections.push(section);
-
-      if (tune.currentEditionId) {
-        const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
-        if (edition) {
-          edition.sectionsSnapshot.push({ ...section });
-        }
-      }
+      syncCurrentEditionSnapshot(db, tuneId);
 
       const progress = buildProgress(db, tuneId);
       return { section, conflicts, progress };
@@ -2848,14 +2867,7 @@ async function handle(req, res) {
       createdSections.push(section);
     }
 
-    if (tune.currentEditionId) {
-      const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
-      if (edition) {
-        for (const section of createdSections) {
-          edition.sectionsSnapshot.push({ ...section });
-        }
-      }
-    }
+    syncCurrentEditionSnapshot(db, tuneId);
 
     await writeDb(db);
 
@@ -2917,16 +2929,7 @@ async function handle(req, res) {
     section.checked = body.checked !== undefined ? Boolean(body.checked) : true;
     section.note = body.note ?? section.note;
 
-    if (tune.currentEditionId) {
-      const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
-      if (edition) {
-        const snapSection = edition.sectionsSnapshot.find((s) => s.id === section.id);
-        if (snapSection) {
-          snapSection.checked = section.checked;
-          snapSection.note = section.note;
-        }
-      }
-    }
+    syncCurrentEditionSnapshot(db, section.tuneId);
 
     await writeDb(db);
     return send(res, 200, { data: section });
@@ -2976,19 +2979,7 @@ async function handle(req, res) {
       section.note = body.note;
     }
 
-    if (tune.currentEditionId) {
-      const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
-      if (edition) {
-        const snapSection = edition.sectionsSnapshot.find((s) => s.id === section.id);
-        if (snapSection) {
-          snapSection.startBeat = section.startBeat;
-          snapSection.endBeat = section.endBeat;
-          snapSection.laneRange = section.laneRange;
-          snapSection.checked = section.checked;
-          snapSection.note = section.note;
-        }
-      }
-    }
+    syncCurrentEditionSnapshot(db, section.tuneId);
 
     await writeDb(db);
     return send(res, 200, { data: section });
@@ -3401,17 +3392,7 @@ async function handle(req, res) {
       };
 
       if (setAsCurrent) {
-        for (const e of db.tapeEditions) {
-          if (e.tuneId === tuneId) {
-            e.isCurrent = false;
-          }
-        }
-        tune.currentEditionId = edition.id;
-        db.sections = db.sections.filter((s) => s.tuneId !== tuneId);
-        for (const snap of edition.sectionsSnapshot) {
-          const section = { ...snap, tuneId };
-          db.sections.push(section);
-        }
+        applyEditionAsCurrent(db, tuneId, edition);
       }
 
       db.tapeEditions.push(edition);
@@ -3448,18 +3429,7 @@ async function handle(req, res) {
       return send(res, 400, { error: "版次不属于该曲目" });
     }
 
-    for (const e of db.tapeEditions) {
-      if (e.tuneId === tuneId) {
-        e.isCurrent = e.id === editionId;
-      }
-    }
-    tune.currentEditionId = editionId;
-
-    db.sections = db.sections.filter((s) => s.tuneId !== tuneId);
-    for (const snap of edition.sectionsSnapshot) {
-      const section = { ...snap, tuneId };
-      db.sections.push(section);
-    }
+    applyEditionAsCurrent(db, tuneId, edition);
 
     await writeDb(db);
     return send(res, 200, { data: edition });
@@ -3865,16 +3835,7 @@ async function handle(req, res) {
           if (body.sectionNote !== undefined) {
             section.note = body.sectionNote;
           }
-          if (tune.currentEditionId) {
-            const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
-            if (edition) {
-              const snapSection = edition.sectionsSnapshot.find((s) => s.id === section.id);
-              if (snapSection) {
-                snapSection.checked = section.checked;
-                snapSection.note = section.note;
-              }
-            }
-          }
+          syncCurrentEditionSnapshot(db, task.tuneId);
           sectionChecked = true;
         }
       }
