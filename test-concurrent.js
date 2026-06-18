@@ -1,10 +1,17 @@
 const http = require("http");
+const { copyFile, mkdtemp, rm } = require("fs/promises");
+const os = require("os");
+const path = require("path");
+const { spawn } = require("child_process");
 
-const PORT = Number(process.env.PORT || 3019);
+const PORT = Number(process.env.PORT || 0) || 3100 + Math.floor(Math.random() * 1000);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 const TEST_PREFIX = "zfl_concurrent_test_";
 const TEST_TUNE_TITLE = "并发写入隔离测试曲目";
+const SERVER_START_TIMEOUT_MS = 10000;
 
+let serverProcess = null;
+let tempDataDir = null;
 let testTuneId = null;
 let createdSectionIds = [];
 let createdEditionIds = [];
@@ -51,6 +58,77 @@ function request(path, options = {}) {
 
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForServer() {
+  const deadline = Date.now() + SERVER_START_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    try {
+      const health = await request("/health");
+      if (health.status === 200 && health.body.ok) {
+        return health;
+      }
+    } catch {
+    }
+    await sleep(100);
+  }
+  throw new Error(`测试服务启动超时: ${BASE_URL}`);
+}
+
+async function startIsolatedServer() {
+  tempDataDir = await mkdtemp(path.join(os.tmpdir(), "zfl-concurrent-"));
+  await copyFile(
+    path.join(__dirname, "data", "db.json"),
+    path.join(tempDataDir, "db.json")
+  );
+  console.log(`临时数据目录: ${tempDataDir}`);
+
+  serverProcess = spawn(process.execPath, ["server.js"], {
+    cwd: __dirname,
+    env: {
+      ...process.env,
+      PORT: String(PORT),
+      DATA_DIR: tempDataDir
+    },
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+
+  serverProcess.stdout.on("data", (chunk) => {
+    process.stdout.write(`[server] ${chunk}`);
+  });
+  serverProcess.stderr.on("data", (chunk) => {
+    process.stderr.write(`[server] ${chunk}`);
+  });
+
+  serverProcess.on("exit", (code, signal) => {
+    if (code !== null && code !== 0) {
+      console.error(`[server] exited with code ${code}`);
+    } else if (signal) {
+      console.log(`[server] stopped by ${signal}`);
+    }
+  });
+
+  await waitForServer();
+}
+
+async function stopIsolatedServer() {
+  if (serverProcess && !serverProcess.killed) {
+    serverProcess.kill("SIGTERM");
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, 1000);
+      serverProcess.once("exit", () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
+  }
+  serverProcess = null;
+
+  if (tempDataDir) {
+    await rm(tempDataDir, { recursive: true, force: true });
+    console.log(`临时数据目录已清理: ${tempDataDir}`);
+    tempDataDir = null;
+  }
 }
 
 async function setupIsolatedTestData() {
@@ -604,6 +682,8 @@ async function runAllTests() {
   console.log("========================================");
 
   try {
+    await startIsolatedServer();
+
     const health = await request("/health");
     console.log(`服务器状态: ${health.body.ok ? "正常" : "异常"}`);
     console.log(`数据版本: v${health.body.dataVersion}`);
@@ -643,9 +723,11 @@ async function runAllTests() {
 
     if (passed === total) {
       console.log("🎉 所有测试通过! 并发写入安全，数据隔离有效");
+      await stopIsolatedServer();
       process.exit(0);
     } else {
       console.log("⚠️  部分测试失败，请检查");
+      await stopIsolatedServer();
       process.exit(1);
     }
   } catch (err) {
@@ -660,6 +742,7 @@ async function runAllTests() {
       }
     }
 
+    await stopIsolatedServer();
     process.exit(1);
   }
 }
@@ -671,6 +754,7 @@ process.on("SIGINT", async () => {
       await cleanupIsolatedTestData();
     } catch (e) {}
   }
+  await stopIsolatedServer();
   process.exit(0);
 });
 

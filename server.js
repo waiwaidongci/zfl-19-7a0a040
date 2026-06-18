@@ -3,9 +3,12 @@ const { readFile, writeFile, mkdir, copyFile, rename, unlink } = require("fs/pro
 const path = require("path");
 
 const PORT = Number(process.env.PORT || 3019);
-const DB_FILE = path.join(__dirname, "data", "db.json");
-const BACKUP_DIR = path.join(__dirname, "data", "backups");
-const MIGRATION_LOG_FILE = path.join(__dirname, "data", "migration-log.json");
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(__dirname, "data");
+const DB_FILE = path.join(DATA_DIR, "db.json");
+const BACKUP_DIR = path.join(DATA_DIR, "backups");
+const MIGRATION_LOG_FILE = path.join(DATA_DIR, "migration-log.json");
 
 const CURRENT_DATA_VERSION = 7;
 const URGENT_HOURS_THRESHOLD = 24;
