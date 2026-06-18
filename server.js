@@ -215,19 +215,45 @@ let dbCache = null;
 let cacheLoaded = false;
 let writeQueue = Promise.resolve();
 let pendingWrites = 0;
+let failedOperations = 0;
 
 function enqueueWrite(writeFn) {
   pendingWrites++;
+
+  let resolveOuter;
+  let rejectOuter;
+  const outerPromise = new Promise((resolve, reject) => {
+    resolveOuter = resolve;
+    rejectOuter = reject;
+  });
+
   writeQueue = writeQueue
-    .then(() => writeFn())
-    .catch((err) => {
-      console.error("[WriteQueue] Write operation failed:", err);
-      throw err;
+    .then(async () => {
+      try {
+        const result = await writeFn();
+        resolveOuter(result);
+      } catch (err) {
+        failedOperations++;
+        console.error("[WriteQueue] Write operation failed:", err.message || err);
+        rejectOuter(err);
+      } finally {
+        pendingWrites--;
+      }
     })
-    .finally(() => {
-      pendingWrites--;
+    .catch((err) => {
+      console.error("[WriteQueue] Fatal error in queue chain, recovering:", err.message || err);
+      pendingWrites = Math.max(0, pendingWrites - 1);
     });
-  return writeQueue;
+
+  return outerPromise;
+}
+
+function getWriteQueueStats() {
+  return {
+    pendingWrites,
+    failedOperations,
+    cacheLoaded
+  };
 }
 
 async function loadDbToCache() {
@@ -2555,10 +2581,7 @@ async function handle(req, res) {
           }
         : null,
       backupPath: migrationState.backupPath,
-      writeQueue: {
-        pendingWrites,
-        cacheLoaded
-      }
+      writeQueue: getWriteQueueStats()
     });
   }
 
