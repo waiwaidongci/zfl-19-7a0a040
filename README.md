@@ -591,7 +591,7 @@ curl -s http://127.0.0.1:3019/tunes/$TUNE_ID/report/snapshots | python3 -m json.
 
 ## 本地与CI验证流程
 
-本项目零依赖（不引入Web框架、不引入数据库依赖、不引入测试框架），所有验证脚本均使用 Node.js 内置模块。所有验证过程**绝对不会写坏仓库里的 `data/db.json`**，也**不会覆盖 `data/backups/` 中的历史备份**——每个脚本都通过 `DATA_DIR` 环境变量指向独立临时目录，服务退出后自动清理。验证完成后会主动校验仓库原始数据的 SHA256 与备份目录完整性。
+本项目零依赖（不引入Web框架、不引入数据库依赖、不引入测试框架），所有验证脚本均使用 Node.js 内置模块。所有验证过程**绝对不会写坏仓库里的 `data/db.json`**，也**不会覆盖 `data/backups/` 中的历史备份**——每个涉及服务启动的脚本都通过 `DATA_DIR` 环境变量指向独立临时目录，服务退出后自动清理，并在测试前后对仓库原始数据执行 SHA256 与备份目录完整性双重校验。
 
 ### 前置条件
 
@@ -766,12 +766,12 @@ PORT=3999 node scripts/smoke-test.js
 
 ### 数据安全承诺
 
-所有验证脚本统一遵循以下隔离原则：
+全部 5 个验证脚本（`lint`、`smoke`、`migrate-check`、`test:concurrent`、`test:edition`）统一遵循以下隔离原则：
 
-1. **绝不直接使用仓库 `data/` 作为 `DATA_DIR`**，一律 `mkdtemp` 创建临时目录再将 `db.json` 复制过去
+1. **绝不直接使用仓库 `data/` 作为 `DATA_DIR`**——所有涉及服务启动的脚本一律 `mkdtemp` 创建临时目录，再将 `db.json` 复制过去（`lint` 为纯静态检查，不启动服务）
 2. 服务进程通过 `env.DATA_DIR` 显式传入，不依赖 `server.js` 的默认路径
 3. 验证完成后无论成功失败均 `SIGTERM` 服务并 `rm -rf` 临时目录
-4. **双重校验**：验证前对 `data/db.json` 计算 SHA256、对 `data/backups/` 做清单快照；验证后对比哈希未变、备份目录无增删改
-5. 若 SHA256 校验或备份目录校验失败，即使 API 测试通过，整体仍退出非零并打印明确警告
+4. **双重校验**：测试前对 `data/db.json` 计算 SHA256、对 `data/backups/` 做清单快照（文件名/大小/mtime）；测试后对比哈希未变、备份目录无增删改。此校验在 `smoke`、`migrate-check`、`test:concurrent`、`test:edition` 四个脚本中均执行
+5. 若 SHA256 校验或备份目录校验失败，即使 API 测试全部通过，整体仍退出非零并打印明确警告
 
 > 违反以上原则的修改会导致 CI 失败，请在改动验证脚本后自查以上 5 点。

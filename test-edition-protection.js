@@ -1,8 +1,13 @@
 const http = require("http");
-const { copyFile, mkdtemp, rm } = require("fs/promises");
+const { copyFile, mkdtemp, rm, readFile, stat } = require("fs/promises");
 const os = require("os");
 const path = require("path");
 const { spawn } = require("child_process");
+const crypto = require("crypto");
+
+const PROJECT_ROOT = path.resolve(__dirname);
+const REAL_DB_PATH = path.join(PROJECT_ROOT, "data", "db.json");
+const REAL_BACKUPS_DIR = path.join(PROJECT_ROOT, "data", "backups");
 
 const PORT = Number(process.env.PORT || 0) || 3200 + Math.floor(Math.random() * 1000);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
@@ -13,6 +18,70 @@ const SERVER_START_TIMEOUT_MS = 10000;
 let serverProcess = null;
 let tempDataDir = null;
 let testTuneId = null;
+
+let realDbHashBefore = null;
+let realBackupsSnapshotBefore = null;
+
+function hashFileContent(content) {
+  return crypto.createHash("sha256").update(content).digest("hex");
+}
+
+async function snapshotRealData() {
+  realDbHashBefore = hashFileContent(await readFile(REAL_DB_PATH, "utf-8"));
+  const backupFiles = [];
+  try {
+    const { readdirSync } = require("fs");
+    const files = readdirSync(REAL_BACKUPS_DIR);
+    for (const f of files) {
+      const fp = path.join(REAL_BACKUPS_DIR, f);
+      const s = await stat(fp);
+      backupFiles.push({ name: f, size: s.size, mtime: s.mtimeMs });
+    }
+  } catch (e) {}
+  realBackupsSnapshotBefore = backupFiles;
+}
+
+async function verifyRealDataUntouched() {
+  console.log("\n--- 验证仓库真实数据未被修改 ---");
+  let ok = true;
+  const realDbAfter = hashFileContent(await readFile(REAL_DB_PATH, "utf-8"));
+  if (realDbAfter !== realDbHashBefore) {
+    console.log(`[FAIL] data/db.json 被修改！测试过程写坏了仓库数据`);
+    ok = false;
+  } else {
+    console.log(`[OK]   data/db.json 未被修改`);
+  }
+  try {
+    const { readdirSync } = require("fs");
+    const files = readdirSync(REAL_BACKUPS_DIR);
+    const currentFiles = [];
+    for (const f of files) {
+      const fp = path.join(REAL_BACKUPS_DIR, f);
+      const s = await stat(fp);
+      currentFiles.push({ name: f, size: s.size, mtime: s.mtimeMs });
+    }
+    if (currentFiles.length !== realBackupsSnapshotBefore.length) {
+      console.log(`[FAIL] data/backups/ 文件数量变化：${realBackupsSnapshotBefore.length} -> ${currentFiles.length}`);
+      ok = false;
+    } else {
+      let allSame = true;
+      for (let i = 0; i < currentFiles.length; i++) {
+        const a = realBackupsSnapshotBefore[i];
+        const b = currentFiles[i];
+        if (a.name !== b.name || a.size !== b.size || a.mtime !== b.mtime) { allSame = false; break; }
+      }
+      if (allSame) {
+        console.log(`[OK]   data/backups/ 未被覆盖或修改 (${currentFiles.length} 个文件)`);
+      } else {
+        console.log(`[FAIL] data/backups/ 内容被改动！`);
+        ok = false;
+      }
+    }
+  } catch (e) {
+    console.log(`[WARN] 无法验证 backups 目录: ${e.message}`);
+  }
+  return ok;
+}
 
 function request(path, options = {}) {
   return new Promise((resolve, reject) => {
@@ -748,6 +817,8 @@ async function runAllTests() {
   console.log("========================================");
 
   try {
+    await snapshotRealData();
+
     await startIsolatedServer();
 
     const health = await request("/health");
@@ -782,15 +853,20 @@ async function runAllTests() {
       `\n最终队列状态: pending=${finalHealth.body.writeQueue?.pendingWrites}, failed=${finalHealth.body.writeQueue?.failedOperations}`
     );
 
+    const untouchedOk = await verifyRealDataUntouched();
+
     await stopIsolatedServer();
 
-    if (passed === total && total > 0) {
-      console.log("🎉 所有跨版次保护测试通过!");
+    if (passed === total && total > 0 && untouchedOk) {
+      console.log("\n🎉 所有跨版次保护测试通过!");
       process.exit(0);
     } else if (total === 0) {
       console.log("⚠️  所有测试被跳过，请检查测试环境");
       process.exit(0);
     } else {
+      if (!untouchedOk) {
+        console.log("\n⚠️  仓库数据被修改！隔离机制可能失效");
+      }
       console.log("⚠️  部分测试失败，请检查");
       process.exit(1);
     }
@@ -806,6 +882,7 @@ async function runAllTests() {
       }
     }
 
+    try { await verifyRealDataUntouched(); } catch (e) {}
     await stopIsolatedServer();
     process.exit(1);
   }
