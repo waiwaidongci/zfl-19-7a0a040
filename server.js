@@ -211,6 +211,89 @@ const initialData = {
 
 initialData._dataVersion = CURRENT_DATA_VERSION;
 
+let dbCache = null;
+let cacheLoaded = false;
+let writeQueue = Promise.resolve();
+let pendingWrites = 0;
+
+function enqueueWrite(writeFn) {
+  pendingWrites++;
+  writeQueue = writeQueue
+    .then(() => writeFn())
+    .catch((err) => {
+      console.error("[WriteQueue] Write operation failed:", err);
+      throw err;
+    })
+    .finally(() => {
+      pendingWrites--;
+    });
+  return writeQueue;
+}
+
+async function loadDbToCache() {
+  if (cacheLoaded) return dbCache;
+  try {
+    const rawData = await readFile(DB_FILE, "utf8");
+    dbCache = JSON.parse(rawData);
+    cacheLoaded = true;
+    return dbCache;
+  } catch (err) {
+    console.error("[DbCache] Failed to load db to cache:", err.message);
+    throw err;
+  }
+}
+
+function invalidateCache() {
+  cacheLoaded = false;
+  dbCache = null;
+}
+
+async function getDbFromCache() {
+  if (!cacheLoaded) {
+    await loadDbToCache();
+  }
+  return JSON.parse(JSON.stringify(dbCache));
+}
+
+function updateCache(newData) {
+  dbCache = JSON.parse(JSON.stringify(newData));
+  cacheLoaded = true;
+}
+
+async function transaction(fn) {
+  return enqueueWrite(async () => {
+    const db = await getDbFromCache();
+    const snapshot = JSON.parse(JSON.stringify(db));
+
+    try {
+      const result = await fn(db);
+
+      if (db._dataVersion === undefined) {
+        db._dataVersion = CURRENT_DATA_VERSION;
+      }
+
+      const content = JSON.stringify(db, null, 2);
+      const tmpPath = `${DB_FILE}.tmp.${Date.now().toString(36)}`;
+      try {
+        await writeFile(tmpPath, content);
+        await rename(tmpPath, DB_FILE);
+      } catch (err) {
+        try {
+          await unlink(tmpPath);
+        } catch {
+        }
+        throw err;
+      }
+
+      updateCache(db);
+      return { success: true, result, data: db };
+    } catch (err) {
+      updateCache(snapshot);
+      throw err;
+    }
+  });
+}
+
 async function atomicWriteFile(targetPath, content) {
   const tmpPath = `${targetPath}.tmp.${Date.now().toString(36)}`;
   try {
@@ -958,6 +1041,9 @@ async function runMigrations() {
 
     if (anyChanges || sourceVersion < CURRENT_DATA_VERSION) {
       await atomicWriteFile(DB_FILE, JSON.stringify(data, null, 2));
+      updateCache(data);
+    } else {
+      updateCache(data);
     }
 
     const logEntry = {
@@ -1065,20 +1151,24 @@ async function ensureDb() {
     } catch {
       await atomicWriteFile(DB_FILE, JSON.stringify(initialData, null, 2));
       migrationState.dataVersion = CURRENT_DATA_VERSION;
+      updateCache(initialData);
     }
   }
 }
 
 async function readDb() {
   await ensureDb();
-  return JSON.parse(await readFile(DB_FILE, "utf8"));
+  return getDbFromCache();
 }
 
 async function writeDb(data) {
-  if (data._dataVersion === undefined) {
-    data._dataVersion = CURRENT_DATA_VERSION;
-  }
-  await atomicWriteFile(DB_FILE, JSON.stringify(data, null, 2));
+  return enqueueWrite(async () => {
+    if (data._dataVersion === undefined) {
+      data._dataVersion = CURRENT_DATA_VERSION;
+    }
+    await atomicWriteFile(DB_FILE, JSON.stringify(data, null, 2));
+    updateCache(data);
+  });
 }
 
 function send(res, status, body) {
@@ -2464,7 +2554,11 @@ async function handle(req, res) {
             error: migrationState.lastMigration.error || null
           }
         : null,
-      backupPath: migrationState.backupPath
+      backupPath: migrationState.backupPath,
+      writeQueue: {
+        pendingWrites,
+        cacheLoaded
+      }
     });
   }
 
@@ -2610,52 +2704,55 @@ async function handle(req, res) {
 
   if (tuneSectionsMatch && req.method === "POST") {
     const tuneId = tuneSectionsMatch[1];
-    const tune = findTune(db, tuneId);
-    ensureTuneNotArchived(tune);
     const body = await parseBody(req);
     required(body, ["startBeat", "endBeat", "laneRange"]);
-    const section = {
-      id: makeId("section"),
-      tuneId,
-      startBeat: Number(body.startBeat),
-      endBeat: Number(body.endBeat),
-      laneRange: body.laneRange,
-      checked: Boolean(body.checked),
-      note: body.note || ""
-    };
 
-    const conflicts = detectConflictsForNewSection(db, tuneId, section);
+    const txResult = await transaction(async (db) => {
+      const tune = findTune(db, tuneId);
+      ensureTuneNotArchived(tune);
 
-    if (conflicts.errors.length > 0) {
-      return send(res, 409, {
-        error: "存在严重冲突，无法保存",
-        conflicts: conflicts.errors,
-        warnings: conflicts.warnings
-      });
-    }
+      const section = {
+        id: makeId("section"),
+        tuneId,
+        startBeat: Number(body.startBeat),
+        endBeat: Number(body.endBeat),
+        laneRange: body.laneRange,
+        checked: Boolean(body.checked),
+        note: body.note || ""
+      };
 
-    section.conflicts = {
-      warnings: conflicts.warnings,
-      lastCheckedAt: new Date().toISOString()
-    };
+      const conflicts = detectConflictsForNewSection(db, tuneId, section);
 
-    db.sections.push(section);
-
-    if (tune.currentEditionId) {
-      const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
-      if (edition) {
-        edition.sectionsSnapshot.push({ ...section });
+      if (conflicts.errors.length > 0) {
+        const error = new Error("存在严重冲突，无法保存");
+        error.status = 409;
+        error.conflicts = conflicts.errors;
+        error.warnings = conflicts.warnings;
+        throw error;
       }
-    }
 
-    await writeDb(db);
+      section.conflicts = {
+        warnings: conflicts.warnings,
+        lastCheckedAt: new Date().toISOString()
+      };
 
-    const progress = buildProgress(db, tuneId);
+      db.sections.push(section);
+
+      if (tune.currentEditionId) {
+        const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
+        if (edition) {
+          edition.sectionsSnapshot.push({ ...section });
+        }
+      }
+
+      const progress = buildProgress(db, tuneId);
+      return { section, conflicts, progress };
+    });
 
     return send(res, 201, {
-      data: section,
-      warnings: conflicts.warnings,
-      progress
+      data: txResult.result.section,
+      warnings: txResult.result.conflicts.warnings,
+      progress: txResult.result.progress
     });
   }
 
@@ -3083,131 +3180,139 @@ async function handle(req, res) {
   const endSessionMatch = pathname.match(/^\/play-sessions\/([^/]+)\/end$/);
   if (endSessionMatch && req.method === "PATCH") {
     const sessionId = endSessionMatch[1];
-    const session = db.playSessions.find((item) => item.id === sessionId);
-    if (!session) return send(res, 404, { error: "试奏会话不存在" });
-    const tune = findTune(db, session.tuneId);
-    ensureTuneNotArchived(tune);
-    if (session.status === "ended") {
-      return send(res, 400, { error: "试奏会话已结束" });
-    }
     const body = await parseBody(req);
     required(body, ["endSectionId"]);
 
-    const draftIssues = body.issues || [];
-    const createdIssues = [];
-    const allWarnings = [];
-    const issueErrors = [];
-    const originalIssuesLength = db.issues.length;
+    const txResult = await transaction(async (db) => {
+      const session = db.playSessions.find((item) => item.id === sessionId);
+      if (!session) {
+        const error = new Error("试奏会话不存在");
+        error.status = 404;
+        throw error;
+      }
+      const tune = findTune(db, session.tuneId);
+      ensureTuneNotArchived(tune);
+      if (session.status === "ended") {
+        const error = new Error("试奏会话已结束");
+        error.status = 400;
+        throw error;
+      }
 
-    if (draftIssues.length > 0) {
-      for (let i = 0; i < draftIssues.length; i++) {
-        const draft = draftIssues[i];
-        try {
-          required(draft, ["sectionId", "type", "description"]);
-        } catch (e) {
-          issueErrors.push({ index: i, error: e.message });
-          continue;
-        }
+      const draftIssues = body.issues || [];
+      const createdIssues = [];
+      const allWarnings = [];
+      const issueErrors = [];
+      const originalIssuesLength = db.issues.length;
 
-        const section = db.sections.find(
-          (item) => item.id === draft.sectionId && item.tuneId === session.tuneId
-        );
-        if (!section) {
-          issueErrors.push({ index: i, error: "区间不存在或不属于该曲目" });
-          continue;
-        }
-
-        const resolvedEditionId = resolveEditionId(db, session.tuneId, draft.editionId || null);
-        if (resolvedEditionId) {
-          const edition = findEdition(db, resolvedEditionId);
-          if (edition.tuneId !== session.tuneId) {
-            issueErrors.push({ index: i, error: "版次不属于该曲目" });
+      if (draftIssues.length > 0) {
+        for (let i = 0; i < draftIssues.length; i++) {
+          const draft = draftIssues[i];
+          try {
+            required(draft, ["sectionId", "type", "description"]);
+          } catch (e) {
+            issueErrors.push({ index: i, error: e.message });
             continue;
           }
-          const sectionInEdition = edition.sectionsSnapshot.find(
-            (s) => s.id === draft.sectionId
+
+          const section = db.sections.find(
+            (item) => item.id === draft.sectionId && item.tuneId === session.tuneId
           );
-          if (!sectionInEdition) {
-            issueErrors.push({ index: i, error: "区间不存在于指定版次中" });
+          if (!section) {
+            issueErrors.push({ index: i, error: "区间不存在或不属于该曲目" });
             continue;
           }
-        }
 
-        const now = new Date().toISOString();
-        const issue = {
-          id: makeId("issue"),
-          tuneId: session.tuneId,
-          editionId: resolvedEditionId,
-          sectionId: draft.sectionId,
-          type: draft.type,
-          beat: draft.beat === undefined ? null : Number(draft.beat),
-          lane: draft.lane === undefined ? null : Number(draft.lane),
-          description: draft.description,
-          status: "open",
-          createdAt: now,
-          resolvedAt: null,
-          fixDescription: null,
-          fixTime: null,
-          reviewNote: null,
-          timeline: [
-            {
-              status: "open",
-              fromStatus: null,
-              at: now,
-              note: "创建问题"
+          const resolvedEditionId = resolveEditionId(db, session.tuneId, draft.editionId || null);
+          if (resolvedEditionId) {
+            const edition = findEdition(db, resolvedEditionId);
+            if (edition.tuneId !== session.tuneId) {
+              issueErrors.push({ index: i, error: "版次不属于该曲目" });
+              continue;
             }
-          ]
-        };
+            const sectionInEdition = edition.sectionsSnapshot.find(
+              (s) => s.id === draft.sectionId
+            );
+            if (!sectionInEdition) {
+              issueErrors.push({ index: i, error: "区间不存在于指定版次中" });
+              continue;
+            }
+          }
 
-        db.issues.push(issue);
+          const now = new Date().toISOString();
+          const issue = {
+            id: makeId("issue"),
+            tuneId: session.tuneId,
+            editionId: resolvedEditionId,
+            sectionId: draft.sectionId,
+            type: draft.type,
+            beat: draft.beat === undefined ? null : Number(draft.beat),
+            lane: draft.lane === undefined ? null : Number(draft.lane),
+            description: draft.description,
+            status: "open",
+            createdAt: now,
+            resolvedAt: null,
+            fixDescription: null,
+            fixTime: null,
+            reviewNote: null,
+            timeline: [
+              {
+                status: "open",
+                fromStatus: null,
+                at: now,
+                note: "创建问题"
+              }
+            ]
+          };
 
-        const conflicts = detectConflictsForNewIssue(db, session.tuneId, issue);
+          db.issues.push(issue);
 
-        if (conflicts.errors.length > 0) {
-          db.issues.pop();
-          issueErrors.push({
-            index: i,
-            error: "存在严重冲突，无法保存",
-            conflicts: conflicts.errors,
-            warnings: conflicts.warnings
-          });
-          continue;
+          const conflicts = detectConflictsForNewIssue(db, session.tuneId, issue);
+
+          if (conflicts.errors.length > 0) {
+            db.issues.pop();
+            issueErrors.push({
+              index: i,
+              error: "存在严重冲突，无法保存",
+              conflicts: conflicts.errors,
+              warnings: conflicts.warnings
+            });
+            continue;
+          }
+
+          issue.conflicts = {
+            warnings: conflicts.warnings,
+            lastCheckedAt: new Date().toISOString()
+          };
+
+          createdIssues.push(issue);
+          allWarnings.push(...conflicts.warnings);
         }
 
-        issue.conflicts = {
-          warnings: conflicts.warnings,
-          lastCheckedAt: new Date().toISOString()
-        };
-
-        createdIssues.push(issue);
-        allWarnings.push(...conflicts.warnings);
+        if (issueErrors.length > 0) {
+          db.issues.length = originalIssuesLength;
+          const error = new Error("部分问题存在冲突或校验失败，结束会话已取消");
+          error.status = 409;
+          error.issueErrors = issueErrors;
+          error.warnings = allWarnings;
+          throw error;
+        }
       }
 
-      if (issueErrors.length > 0) {
-        db.issues.length = originalIssuesLength;
-        return send(res, 409, {
-          error: "部分问题存在冲突或校验失败，结束会话已取消",
-          issueErrors,
-          warnings: allWarnings
-        });
-      }
-    }
+      session.endSectionId = body.endSectionId ?? session.endSectionId;
+      session.issuesFound = draftIssues.length > 0 ? draftIssues.length : (body.issuesFound !== undefined ? Number(body.issuesFound) : session.issuesFound);
+      session.note = body.note !== undefined ? body.note : session.note;
+      session.status = "ended";
+      session.endedAt = new Date().toISOString();
 
-    session.endSectionId = body.endSectionId ?? session.endSectionId;
-    session.issuesFound = draftIssues.length > 0 ? draftIssues.length : (body.issuesFound !== undefined ? Number(body.issuesFound) : session.issuesFound);
-    session.note = body.note !== undefined ? body.note : session.note;
-    session.status = "ended";
-    session.endedAt = new Date().toISOString();
-
-    await writeDb(db);
-
-    const progress = buildProgress(db, session.tuneId);
+      const progress = buildProgress(db, session.tuneId);
+      return { session, createdIssues, allWarnings, progress };
+    });
 
     return send(res, 200, {
-      data: session,
-      issues: createdIssues,
-      warnings: allWarnings,
-      progress
+      data: txResult.result.session,
+      issues: txResult.result.createdIssues,
+      warnings: txResult.result.allWarnings,
+      progress: txResult.result.progress
     });
   }
 
@@ -3223,65 +3328,71 @@ async function handle(req, res) {
 
   if (tuneEditionsMatch && req.method === "POST") {
     const tuneId = tuneEditionsMatch[1];
-    const tune = findTune(db, tuneId);
-    ensureTuneNotArchived(tune);
     const body = await parseBody(req);
     required(body, ["description"]);
 
-    let sectionsSnapshot;
-    let source;
-    let sourceEditionId = null;
+    const txResult = await transaction(async (db) => {
+      const tune = findTune(db, tuneId);
+      ensureTuneNotArchived(tune);
 
-    if (body.sourceEditionId) {
-      const srcEdition = findEdition(db, body.sourceEditionId);
-      if (srcEdition.tuneId !== tuneId) {
-        return send(res, 400, { error: "来源版次不属于该曲目" });
+      let sectionsSnapshot;
+      let source;
+      let sourceEditionId = null;
+
+      if (body.sourceEditionId) {
+        const srcEdition = findEdition(db, body.sourceEditionId);
+        if (srcEdition.tuneId !== tuneId) {
+          const error = new Error("来源版次不属于该曲目");
+          error.status = 400;
+          throw error;
+        }
+        sectionsSnapshot = JSON.parse(JSON.stringify(srcEdition.sectionsSnapshot));
+        source = "copy_edition";
+        sourceEditionId = srcEdition.id;
+      } else {
+        const currentSections = db.sections.filter((s) => s.tuneId === tuneId);
+        sectionsSnapshot = JSON.parse(JSON.stringify(currentSections));
+        source = tune.currentEditionId ? "copy_current" : "initial";
       }
-      sectionsSnapshot = JSON.parse(JSON.stringify(srcEdition.sectionsSnapshot));
-      source = "copy_edition";
-      sourceEditionId = srcEdition.id;
-    } else {
-      const currentSections = db.sections.filter((s) => s.tuneId === tuneId);
-      sectionsSnapshot = JSON.parse(JSON.stringify(currentSections));
-      source = tune.currentEditionId ? "copy_current" : "initial";
-    }
 
-    const tuneEditions = db.tapeEditions.filter((e) => e.tuneId === tuneId);
-    const maxVersion = tuneEditions.reduce(
-      (max, e) => Math.max(max, e.version),
-      0
-    );
+      const tuneEditions = db.tapeEditions.filter((e) => e.tuneId === tuneId);
+      const maxVersion = tuneEditions.reduce(
+        (max, e) => Math.max(max, e.version),
+        0
+      );
 
-    const setAsCurrent = body.setAsCurrent !== false;
-    const edition = {
-      id: makeId("edition"),
-      tuneId,
-      version: maxVersion + 1,
-      source,
-      sourceEditionId,
-      description: body.description,
-      sectionsSnapshot,
-      isCurrent: setAsCurrent,
-      createdAt: new Date().toISOString()
-    };
+      const setAsCurrent = body.setAsCurrent !== false;
+      const edition = {
+        id: makeId("edition"),
+        tuneId,
+        version: maxVersion + 1,
+        source,
+        sourceEditionId,
+        description: body.description,
+        sectionsSnapshot,
+        isCurrent: setAsCurrent,
+        createdAt: new Date().toISOString()
+      };
 
-    if (setAsCurrent) {
-      for (const e of db.tapeEditions) {
-        if (e.tuneId === tuneId) {
-          e.isCurrent = false;
+      if (setAsCurrent) {
+        for (const e of db.tapeEditions) {
+          if (e.tuneId === tuneId) {
+            e.isCurrent = false;
+          }
+        }
+        tune.currentEditionId = edition.id;
+        db.sections = db.sections.filter((s) => s.tuneId !== tuneId);
+        for (const snap of edition.sectionsSnapshot) {
+          const section = { ...snap, tuneId };
+          db.sections.push(section);
         }
       }
-      tune.currentEditionId = edition.id;
-      db.sections = db.sections.filter((s) => s.tuneId !== tuneId);
-      for (const snap of edition.sectionsSnapshot) {
-        const section = { ...snap, tuneId };
-        db.sections.push(section);
-      }
-    }
 
-    db.tapeEditions.push(edition);
-    await writeDb(db);
-    return send(res, 201, { data: edition });
+      db.tapeEditions.push(edition);
+      return { edition };
+    });
+
+    return send(res, 201, { data: txResult.result.edition });
   }
 
   const editionDetailMatch = pathname.match(
@@ -3682,67 +3793,81 @@ async function handle(req, res) {
 
   const completeTaskMatch = pathname.match(/^\/punch-tasks\/([^/]+)\/complete$/);
   if (completeTaskMatch && req.method === "PATCH") {
-    const task = findPunchTask(db, completeTaskMatch[1]);
-    const tune = findTune(db, task.tuneId);
-    ensureTuneNotArchived(tune);
-    if (task.status === "completed") {
-      return send(res, 400, { error: "任务已完成" });
-    }
-    if (task.status === "pending") {
-      return send(res, 400, { error: "任务尚未领取，请先领取任务" });
-    }
+    const taskId = completeTaskMatch[1];
     const body = await parseBody(req);
 
-    if (task.editionId && task.editionId !== tune.currentEditionId) {
-      if (!body.force) {
-        const taskEdition = findEdition(db, task.editionId);
-        return send(res, 409, {
-          error: "该任务属于其他版次，当前版次已切换，无法误完成另一版次的任务",
-          taskEditionId: task.editionId,
-          taskEditionVersion: taskEdition ? taskEdition.version : null,
-          currentEditionId: tune.currentEditionId,
-          hint: "如需完成其他版次任务，请传入 force: true"
-        });
+    const txResult = await transaction(async (db) => {
+      const task = findPunchTask(db, taskId);
+      const tune = findTune(db, task.tuneId);
+      ensureTuneNotArchived(tune);
+      if (task.status === "completed") {
+        const error = new Error("任务已完成");
+        error.status = 400;
+        throw error;
       }
-    }
+      if (task.status === "pending") {
+        const error = new Error("任务尚未领取，请先领取任务");
+        error.status = 400;
+        throw error;
+      }
 
-    if (body.dueAt !== undefined) {
-      task.dueAt = validateDueAt(body.dueAt);
-    }
-    task.status = "completed";
-    task.completedAt = new Date().toISOString();
-    task.note = body.note ?? task.note;
-
-    if (body.checkSection === true) {
-      const section = db.sections.find((s) => s.id === task.sectionId);
-      if (section) {
-        section.checked = true;
-        if (body.sectionNote !== undefined) {
-          section.note = body.sectionNote;
+      if (task.editionId && task.editionId !== tune.currentEditionId) {
+        if (!body.force) {
+          const taskEdition = findEdition(db, task.editionId);
+          const error = new Error("该任务属于其他版次，当前版次已切换，无法误完成另一版次的任务");
+          error.status = 409;
+          error.taskEditionId = task.editionId;
+          error.taskEditionVersion = taskEdition ? taskEdition.version : null;
+          error.currentEditionId = tune.currentEditionId;
+          error.hint = "如需完成其他版次任务，请传入 force: true";
+          throw error;
         }
-        if (tune.currentEditionId) {
-          const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
-          if (edition) {
-            const snapSection = edition.sectionsSnapshot.find((s) => s.id === section.id);
-            if (snapSection) {
-              snapSection.checked = section.checked;
-              snapSection.note = section.note;
+      }
+
+      if (body.dueAt !== undefined) {
+        task.dueAt = validateDueAt(body.dueAt);
+      }
+      task.status = "completed";
+      task.completedAt = new Date().toISOString();
+      task.note = body.note ?? task.note;
+
+      let sectionChecked = false;
+      if (body.checkSection === true) {
+        const section = db.sections.find((s) => s.id === task.sectionId);
+        if (section) {
+          section.checked = true;
+          if (body.sectionNote !== undefined) {
+            section.note = body.sectionNote;
+          }
+          if (tune.currentEditionId) {
+            const edition = db.tapeEditions.find((e) => e.id === tune.currentEditionId);
+            if (edition) {
+              const snapSection = edition.sectionsSnapshot.find((s) => s.id === section.id);
+              if (snapSection) {
+                snapSection.checked = section.checked;
+                snapSection.note = section.note;
+              }
             }
           }
+          sectionChecked = true;
         }
       }
-    }
 
-    await writeDb(db);
-    const now = new Date();
+      const now = new Date();
+      return {
+        task: {
+          ...task,
+          overdue: isTaskOverdue(task, now),
+          isUrgent: isTaskUrgent(task, now),
+          hoursUntilDue: getHoursUntilDue(task, now)
+        },
+        sectionChecked
+      };
+    });
+
     return send(res, 200, {
-      data: {
-        ...task,
-        overdue: isTaskOverdue(task, now),
-        isUrgent: isTaskUrgent(task, now),
-        hoursUntilDue: getHoursUntilDue(task, now)
-      },
-      sectionChecked: body.checkSection === true
+      data: txResult.result.task,
+      sectionChecked: txResult.result.sectionChecked
     });
   }
 
@@ -3859,7 +3984,18 @@ async function handle(req, res) {
 }
 
 const server = http.createServer((req, res) => {
-  handle(req, res).catch((error) => send(res, error.status || 500, { error: error.message || "服务器错误" }));
+  handle(req, res).catch((error) => {
+    const status = error.status || 500;
+    const body = { error: error.message || "服务器错误" };
+    if (error.conflicts !== undefined) body.conflicts = error.conflicts;
+    if (error.warnings !== undefined) body.warnings = error.warnings;
+    if (error.issueErrors !== undefined) body.issueErrors = error.issueErrors;
+    if (error.taskEditionId !== undefined) body.taskEditionId = error.taskEditionId;
+    if (error.taskEditionVersion !== undefined) body.taskEditionVersion = error.taskEditionVersion;
+    if (error.currentEditionId !== undefined) body.currentEditionId = error.currentEditionId;
+    if (error.hint !== undefined) body.hint = error.hint;
+    send(res, status, body);
+  });
 });
 
 async function bootstrap() {

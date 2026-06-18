@@ -139,6 +139,472 @@
             ],
             "lastCheckedAt": "2026-06-17T04:45:44.056Z"
           }
+        },
+        {
+          "id": "section_mqj0k1fy_n6wbrb",
+          "tuneId": "tune_demo",
+          "startBeat": 100,
+          "endBeat": 109,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #1",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.182Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g6_mueqfp",
+          "tuneId": "tune_demo",
+          "startBeat": 110,
+          "endBeat": 119,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #2",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.190Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g7_mbi8ml",
+          "tuneId": "tune_demo",
+          "startBeat": 130,
+          "endBeat": 139,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #4",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.191Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 110-119 与下一区间 130-139 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1g6_mueqfp",
+                  "nextSectionId": "section_mqj0k1g7_mbi8ml",
+                  "gapStart": 120,
+                  "gapEnd": 129,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.192Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g9_e76moj",
+          "tuneId": "tune_demo",
+          "startBeat": 120,
+          "endBeat": 129,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #3",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.193Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ga_bogexa",
+          "tuneId": "tune_demo",
+          "startBeat": 140,
+          "endBeat": 149,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #5",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.194Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gb_x3mwf5",
+          "tuneId": "tune_demo",
+          "startBeat": 150,
+          "endBeat": 159,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #6",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.195Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ge_nek9md",
+          "tuneId": "tune_demo",
+          "startBeat": 170,
+          "endBeat": 179,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #8",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 150-159 与下一区间 170-179 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1gb_x3mwf5",
+                  "nextSectionId": "section_mqj0k1ge_nek9md",
+                  "gapStart": 160,
+                  "gapEnd": 169,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.198Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gg_h7pea8",
+          "tuneId": "tune_demo",
+          "startBeat": 160,
+          "endBeat": 169,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #7",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.200Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gi_j48t3j",
+          "tuneId": "tune_demo",
+          "startBeat": 180,
+          "endBeat": 189,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #9",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.202Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gk_x7nhqe",
+          "tuneId": "tune_demo",
+          "startBeat": 190,
+          "endBeat": 199,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #10",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.204Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1h2_8u65pg",
+          "tuneId": "tune_demo",
+          "startBeat": 200,
+          "endBeat": 209,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.222Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.222Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.222Z"
+          }
         }
       ],
       "isCurrent": true,
@@ -521,6 +987,2421 @@
       ],
       "isCurrent": true,
       "createdAt": "2026-06-17T16:24:11.800Z"
+    },
+    {
+      "id": "edition_mqj0k1go_wip9yi",
+      "tuneId": "tune_demo",
+      "version": 3,
+      "source": "copy_current",
+      "sourceEditionId": null,
+      "description": "并发测试版次 #2",
+      "sectionsSnapshot": [
+        {
+          "id": "section_demo_1",
+          "tuneId": "tune_demo",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "开头主题已试奏"
+        },
+        {
+          "id": "section_demo_2",
+          "tuneId": "tune_demo",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "副歌段等待校对"
+        },
+        {
+          "id": "section_mqhl8hrs_o5a55s",
+          "tuneId": "tune_demo",
+          "startBeat": 70,
+          "endBeat": 96,
+          "laneRange": "1-10",
+          "checked": false,
+          "note": "",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-17T04:45:44.056Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-17T04:45:44.056Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1fy_n6wbrb",
+          "tuneId": "tune_demo",
+          "startBeat": 100,
+          "endBeat": 109,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #1",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.182Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g6_mueqfp",
+          "tuneId": "tune_demo",
+          "startBeat": 110,
+          "endBeat": 119,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #2",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.190Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g7_mbi8ml",
+          "tuneId": "tune_demo",
+          "startBeat": 130,
+          "endBeat": 139,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #4",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.191Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 110-119 与下一区间 130-139 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1g6_mueqfp",
+                  "nextSectionId": "section_mqj0k1g7_mbi8ml",
+                  "gapStart": 120,
+                  "gapEnd": 129,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.192Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g9_e76moj",
+          "tuneId": "tune_demo",
+          "startBeat": 120,
+          "endBeat": 129,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #3",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.193Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ga_bogexa",
+          "tuneId": "tune_demo",
+          "startBeat": 140,
+          "endBeat": 149,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #5",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.194Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gb_x3mwf5",
+          "tuneId": "tune_demo",
+          "startBeat": 150,
+          "endBeat": 159,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #6",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.195Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ge_nek9md",
+          "tuneId": "tune_demo",
+          "startBeat": 170,
+          "endBeat": 179,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #8",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 150-159 与下一区间 170-179 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1gb_x3mwf5",
+                  "nextSectionId": "section_mqj0k1ge_nek9md",
+                  "gapStart": 160,
+                  "gapEnd": 169,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.198Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gg_h7pea8",
+          "tuneId": "tune_demo",
+          "startBeat": 160,
+          "endBeat": 169,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #7",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.200Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gi_j48t3j",
+          "tuneId": "tune_demo",
+          "startBeat": 180,
+          "endBeat": 189,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #9",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.202Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gk_x7nhqe",
+          "tuneId": "tune_demo",
+          "startBeat": 190,
+          "endBeat": 199,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #10",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.204Z"
+          }
+        }
+      ],
+      "isCurrent": false,
+      "createdAt": "2026-06-18T04:42:23.208Z"
+    },
+    {
+      "id": "edition_mqj0k1gr_2eiga0",
+      "tuneId": "tune_demo",
+      "version": 4,
+      "source": "copy_current",
+      "sourceEditionId": null,
+      "description": "并发测试版次 #1",
+      "sectionsSnapshot": [
+        {
+          "id": "section_demo_1",
+          "tuneId": "tune_demo",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "开头主题已试奏"
+        },
+        {
+          "id": "section_demo_2",
+          "tuneId": "tune_demo",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "副歌段等待校对"
+        },
+        {
+          "id": "section_mqhl8hrs_o5a55s",
+          "tuneId": "tune_demo",
+          "startBeat": 70,
+          "endBeat": 96,
+          "laneRange": "1-10",
+          "checked": false,
+          "note": "",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-17T04:45:44.056Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-17T04:45:44.056Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1fy_n6wbrb",
+          "tuneId": "tune_demo",
+          "startBeat": 100,
+          "endBeat": 109,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #1",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.182Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g6_mueqfp",
+          "tuneId": "tune_demo",
+          "startBeat": 110,
+          "endBeat": 119,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #2",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.190Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g7_mbi8ml",
+          "tuneId": "tune_demo",
+          "startBeat": 130,
+          "endBeat": 139,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #4",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.191Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 110-119 与下一区间 130-139 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1g6_mueqfp",
+                  "nextSectionId": "section_mqj0k1g7_mbi8ml",
+                  "gapStart": 120,
+                  "gapEnd": 129,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.192Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g9_e76moj",
+          "tuneId": "tune_demo",
+          "startBeat": 120,
+          "endBeat": 129,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #3",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.193Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ga_bogexa",
+          "tuneId": "tune_demo",
+          "startBeat": 140,
+          "endBeat": 149,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #5",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.194Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gb_x3mwf5",
+          "tuneId": "tune_demo",
+          "startBeat": 150,
+          "endBeat": 159,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #6",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.195Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ge_nek9md",
+          "tuneId": "tune_demo",
+          "startBeat": 170,
+          "endBeat": 179,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #8",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 150-159 与下一区间 170-179 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1gb_x3mwf5",
+                  "nextSectionId": "section_mqj0k1ge_nek9md",
+                  "gapStart": 160,
+                  "gapEnd": 169,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.198Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gg_h7pea8",
+          "tuneId": "tune_demo",
+          "startBeat": 160,
+          "endBeat": 169,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #7",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.200Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gi_j48t3j",
+          "tuneId": "tune_demo",
+          "startBeat": 180,
+          "endBeat": 189,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #9",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.202Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gk_x7nhqe",
+          "tuneId": "tune_demo",
+          "startBeat": 190,
+          "endBeat": 199,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #10",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.204Z"
+          }
+        }
+      ],
+      "isCurrent": false,
+      "createdAt": "2026-06-18T04:42:23.211Z"
+    },
+    {
+      "id": "edition_mqj0k1gt_43x3ln",
+      "tuneId": "tune_demo",
+      "version": 5,
+      "source": "copy_current",
+      "sourceEditionId": null,
+      "description": "并发测试版次 #4",
+      "sectionsSnapshot": [
+        {
+          "id": "section_demo_1",
+          "tuneId": "tune_demo",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "开头主题已试奏"
+        },
+        {
+          "id": "section_demo_2",
+          "tuneId": "tune_demo",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "副歌段等待校对"
+        },
+        {
+          "id": "section_mqhl8hrs_o5a55s",
+          "tuneId": "tune_demo",
+          "startBeat": 70,
+          "endBeat": 96,
+          "laneRange": "1-10",
+          "checked": false,
+          "note": "",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-17T04:45:44.056Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-17T04:45:44.056Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1fy_n6wbrb",
+          "tuneId": "tune_demo",
+          "startBeat": 100,
+          "endBeat": 109,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #1",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.182Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g6_mueqfp",
+          "tuneId": "tune_demo",
+          "startBeat": 110,
+          "endBeat": 119,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #2",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.190Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g7_mbi8ml",
+          "tuneId": "tune_demo",
+          "startBeat": 130,
+          "endBeat": 139,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #4",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.191Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 110-119 与下一区间 130-139 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1g6_mueqfp",
+                  "nextSectionId": "section_mqj0k1g7_mbi8ml",
+                  "gapStart": 120,
+                  "gapEnd": 129,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.192Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g9_e76moj",
+          "tuneId": "tune_demo",
+          "startBeat": 120,
+          "endBeat": 129,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #3",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.193Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ga_bogexa",
+          "tuneId": "tune_demo",
+          "startBeat": 140,
+          "endBeat": 149,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #5",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.194Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gb_x3mwf5",
+          "tuneId": "tune_demo",
+          "startBeat": 150,
+          "endBeat": 159,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #6",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.195Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ge_nek9md",
+          "tuneId": "tune_demo",
+          "startBeat": 170,
+          "endBeat": 179,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #8",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 150-159 与下一区间 170-179 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1gb_x3mwf5",
+                  "nextSectionId": "section_mqj0k1ge_nek9md",
+                  "gapStart": 160,
+                  "gapEnd": 169,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.198Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gg_h7pea8",
+          "tuneId": "tune_demo",
+          "startBeat": 160,
+          "endBeat": 169,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #7",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.200Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gi_j48t3j",
+          "tuneId": "tune_demo",
+          "startBeat": 180,
+          "endBeat": 189,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #9",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.202Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gk_x7nhqe",
+          "tuneId": "tune_demo",
+          "startBeat": 190,
+          "endBeat": 199,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #10",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.204Z"
+          }
+        }
+      ],
+      "isCurrent": false,
+      "createdAt": "2026-06-18T04:42:23.213Z"
+    },
+    {
+      "id": "edition_mqj0k1gv_hpmi4g",
+      "tuneId": "tune_demo",
+      "version": 6,
+      "source": "copy_current",
+      "sourceEditionId": null,
+      "description": "并发测试版次 #5",
+      "sectionsSnapshot": [
+        {
+          "id": "section_demo_1",
+          "tuneId": "tune_demo",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "开头主题已试奏"
+        },
+        {
+          "id": "section_demo_2",
+          "tuneId": "tune_demo",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "副歌段等待校对"
+        },
+        {
+          "id": "section_mqhl8hrs_o5a55s",
+          "tuneId": "tune_demo",
+          "startBeat": 70,
+          "endBeat": 96,
+          "laneRange": "1-10",
+          "checked": false,
+          "note": "",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-17T04:45:44.056Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-17T04:45:44.056Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1fy_n6wbrb",
+          "tuneId": "tune_demo",
+          "startBeat": 100,
+          "endBeat": 109,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #1",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.182Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g6_mueqfp",
+          "tuneId": "tune_demo",
+          "startBeat": 110,
+          "endBeat": 119,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #2",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.190Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g7_mbi8ml",
+          "tuneId": "tune_demo",
+          "startBeat": 130,
+          "endBeat": 139,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #4",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.191Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 110-119 与下一区间 130-139 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1g6_mueqfp",
+                  "nextSectionId": "section_mqj0k1g7_mbi8ml",
+                  "gapStart": 120,
+                  "gapEnd": 129,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.192Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g9_e76moj",
+          "tuneId": "tune_demo",
+          "startBeat": 120,
+          "endBeat": 129,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #3",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.193Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ga_bogexa",
+          "tuneId": "tune_demo",
+          "startBeat": 140,
+          "endBeat": 149,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #5",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.194Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gb_x3mwf5",
+          "tuneId": "tune_demo",
+          "startBeat": 150,
+          "endBeat": 159,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #6",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.195Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ge_nek9md",
+          "tuneId": "tune_demo",
+          "startBeat": 170,
+          "endBeat": 179,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #8",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 150-159 与下一区间 170-179 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1gb_x3mwf5",
+                  "nextSectionId": "section_mqj0k1ge_nek9md",
+                  "gapStart": 160,
+                  "gapEnd": 169,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.198Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gg_h7pea8",
+          "tuneId": "tune_demo",
+          "startBeat": 160,
+          "endBeat": 169,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #7",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.200Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gi_j48t3j",
+          "tuneId": "tune_demo",
+          "startBeat": 180,
+          "endBeat": 189,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #9",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.202Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gk_x7nhqe",
+          "tuneId": "tune_demo",
+          "startBeat": 190,
+          "endBeat": 199,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #10",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.204Z"
+          }
+        }
+      ],
+      "isCurrent": false,
+      "createdAt": "2026-06-18T04:42:23.215Z"
+    },
+    {
+      "id": "edition_mqj0k1gw_drzot0",
+      "tuneId": "tune_demo",
+      "version": 7,
+      "source": "copy_current",
+      "sourceEditionId": null,
+      "description": "并发测试版次 #3",
+      "sectionsSnapshot": [
+        {
+          "id": "section_demo_1",
+          "tuneId": "tune_demo",
+          "startBeat": 1,
+          "endBeat": 32,
+          "laneRange": "1-10",
+          "checked": true,
+          "note": "开头主题已试奏"
+        },
+        {
+          "id": "section_demo_2",
+          "tuneId": "tune_demo",
+          "startBeat": 33,
+          "endBeat": 64,
+          "laneRange": "4-18",
+          "checked": false,
+          "note": "副歌段等待校对"
+        },
+        {
+          "id": "section_mqhl8hrs_o5a55s",
+          "tuneId": "tune_demo",
+          "startBeat": 70,
+          "endBeat": 96,
+          "laneRange": "1-10",
+          "checked": false,
+          "note": "",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-17T04:45:44.056Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-17T04:45:44.056Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1fy_n6wbrb",
+          "tuneId": "tune_demo",
+          "startBeat": 100,
+          "endBeat": 109,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #1",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.182Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.182Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g6_mueqfp",
+          "tuneId": "tune_demo",
+          "startBeat": 110,
+          "endBeat": 119,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #2",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.190Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.190Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g7_mbi8ml",
+          "tuneId": "tune_demo",
+          "startBeat": 130,
+          "endBeat": 139,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #4",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.191Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 110-119 与下一区间 130-139 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1g6_mueqfp",
+                  "nextSectionId": "section_mqj0k1g7_mbi8ml",
+                  "gapStart": 120,
+                  "gapEnd": 129,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.192Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.192Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1g9_e76moj",
+          "tuneId": "tune_demo",
+          "startBeat": 120,
+          "endBeat": 129,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #3",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.193Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.193Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ga_bogexa",
+          "tuneId": "tune_demo",
+          "startBeat": 140,
+          "endBeat": 149,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #5",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.194Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.194Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gb_x3mwf5",
+          "tuneId": "tune_demo",
+          "startBeat": 150,
+          "endBeat": 159,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #6",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.195Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.195Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1ge_nek9md",
+          "tuneId": "tune_demo",
+          "startBeat": 170,
+          "endBeat": 179,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #8",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 150-159 与下一区间 170-179 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqj0k1gb_x3mwf5",
+                  "nextSectionId": "section_mqj0k1ge_nek9md",
+                  "gapStart": 160,
+                  "gapEnd": 169,
+                  "gapSize": 10
+                },
+                "detectedAt": "2026-06-18T04:42:23.198Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.198Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gg_h7pea8",
+          "tuneId": "tune_demo",
+          "startBeat": 160,
+          "endBeat": 169,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #7",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.200Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.200Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gi_j48t3j",
+          "tuneId": "tune_demo",
+          "startBeat": 180,
+          "endBeat": 189,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #9",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.202Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.202Z"
+          }
+        },
+        {
+          "id": "section_mqj0k1gk_x7nhqe",
+          "tuneId": "tune_demo",
+          "startBeat": 190,
+          "endBeat": 199,
+          "laneRange": "1-20",
+          "checked": false,
+          "note": "并发测试区间 #10",
+          "conflicts": {
+            "warnings": [
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_demo_2",
+                  "nextSectionId": "section_mqhl8hrs_o5a55s",
+                  "gapStart": 65,
+                  "gapEnd": 69,
+                  "gapSize": 5
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              },
+              {
+                "type": "beat_gap",
+                "severity": "warning",
+                "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+                "details": {
+                  "sectionId": "section_mqhl8hrs_o5a55s",
+                  "nextSectionId": "section_mqj0k1fy_n6wbrb",
+                  "gapStart": 97,
+                  "gapEnd": 99,
+                  "gapSize": 3
+                },
+                "detectedAt": "2026-06-18T04:42:23.204Z"
+              }
+            ],
+            "lastCheckedAt": "2026-06-18T04:42:23.204Z"
+          }
+        }
+      ],
+      "isCurrent": false,
+      "createdAt": "2026-06-18T04:42:23.216Z"
     }
   ],
   "sections": [
@@ -726,6 +3607,472 @@
       "conflicts": {
         "warnings": [],
         "lastCheckedAt": "2026-06-17T16:23:56.101Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1fy_n6wbrb",
+      "tuneId": "tune_demo",
+      "startBeat": 100,
+      "endBeat": 109,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #1",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.182Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.182Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.182Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1g6_mueqfp",
+      "tuneId": "tune_demo",
+      "startBeat": 110,
+      "endBeat": 119,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #2",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.190Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.190Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.190Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1g7_mbi8ml",
+      "tuneId": "tune_demo",
+      "startBeat": 130,
+      "endBeat": 139,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #4",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.191Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.192Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 110-119 与下一区间 130-139 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqj0k1g6_mueqfp",
+              "nextSectionId": "section_mqj0k1g7_mbi8ml",
+              "gapStart": 120,
+              "gapEnd": 129,
+              "gapSize": 10
+            },
+            "detectedAt": "2026-06-18T04:42:23.192Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.192Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1g9_e76moj",
+      "tuneId": "tune_demo",
+      "startBeat": 120,
+      "endBeat": 129,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #3",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.193Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.193Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.193Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1ga_bogexa",
+      "tuneId": "tune_demo",
+      "startBeat": 140,
+      "endBeat": 149,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #5",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.194Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.194Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.194Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1gb_x3mwf5",
+      "tuneId": "tune_demo",
+      "startBeat": 150,
+      "endBeat": 159,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #6",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.195Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.195Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.195Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1ge_nek9md",
+      "tuneId": "tune_demo",
+      "startBeat": 170,
+      "endBeat": 179,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #8",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.198Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.198Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 150-159 与下一区间 170-179 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqj0k1gb_x3mwf5",
+              "nextSectionId": "section_mqj0k1ge_nek9md",
+              "gapStart": 160,
+              "gapEnd": 169,
+              "gapSize": 10
+            },
+            "detectedAt": "2026-06-18T04:42:23.198Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.198Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1gg_h7pea8",
+      "tuneId": "tune_demo",
+      "startBeat": 160,
+      "endBeat": 169,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #7",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.200Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.200Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.200Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1gi_j48t3j",
+      "tuneId": "tune_demo",
+      "startBeat": 180,
+      "endBeat": 189,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #9",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.202Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.202Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.202Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1gk_x7nhqe",
+      "tuneId": "tune_demo",
+      "startBeat": 190,
+      "endBeat": 199,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "并发测试区间 #10",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.204Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.204Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.204Z"
+      }
+    },
+    {
+      "id": "section_mqj0k1h2_8u65pg",
+      "tuneId": "tune_demo",
+      "startBeat": 200,
+      "endBeat": 209,
+      "laneRange": "1-20",
+      "checked": false,
+      "note": "",
+      "conflicts": {
+        "warnings": [
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 33-64 与下一区间 70-96 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_demo_2",
+              "nextSectionId": "section_mqhl8hrs_o5a55s",
+              "gapStart": 65,
+              "gapEnd": 69,
+              "gapSize": 5
+            },
+            "detectedAt": "2026-06-18T04:42:23.222Z"
+          },
+          {
+            "type": "beat_gap",
+            "severity": "warning",
+            "message": "区间 70-96 与下一区间 100-109 之间存在拍点断裂",
+            "details": {
+              "sectionId": "section_mqhl8hrs_o5a55s",
+              "nextSectionId": "section_mqj0k1fy_n6wbrb",
+              "gapStart": 97,
+              "gapEnd": 99,
+              "gapSize": 3
+            },
+            "detectedAt": "2026-06-18T04:42:23.222Z"
+          }
+        ],
+        "lastCheckedAt": "2026-06-18T04:42:23.222Z"
       }
     }
   ],
